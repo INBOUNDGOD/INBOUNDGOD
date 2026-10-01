@@ -86,6 +86,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
   needs nothing else.
 - Repo: `INBOUNDGOD/INBOUNDGOD`. Work happens on branch
   `claude/keen-newton-hcb1bu`; pull requests go into `main`.
+- **This is the user's GitHub profile repo** (repo name = account name,
+  description "Config files for my GitHub profile."). A `README.md` at the
+  repo root on the default branch is shown publicly on their GitHub profile
+  page, so don't add or change a root `README.md` unless the user asks.
+  Project docs go in subfolders (e.g. `watch-faces/<design>/WFS-BUILD.md`).
 - Open PR: https://github.com/INBOUNDGOD/INBOUNDGOD/pull/1
   (`claude/keen-newton-hcb1bu` → `main`). Every push to the branch updates
   it, so don't open a second PR for this work.
@@ -112,6 +117,10 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 4. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-01**: Noted that this is the user's GitHub profile repo (a root
+  `README.md` would appear on their public profile). PR #1 status: no CI
+  configured, no reviews, mergeable.
 
 - **2026-10-01**: User opened PR INBOUNDGOD/INBOUNDGOD#1
   (https://github.com/INBOUNDGOD/INBOUNDGOD/pull/1) from the Claude Code UI.
