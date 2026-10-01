@@ -84,8 +84,16 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 - Uses claude.ai cloud sessions and the Claude desktop app, and switches
   sessions and models. Keep this file complete enough that a new session
   needs nothing else.
-- Repo is otherwise empty; this project currently lives on branch
-  `claude/keen-newton-hcb1bu` of `INBOUNDGOD/INBOUNDGOD`.
+- Repo: `INBOUNDGOD/INBOUNDGOD`. Work happens on branch
+  `claude/keen-newton-hcb1bu`; pull requests go into `main`.
+- `main` was created on 2026-10-01 as an empty "Initial commit" because the
+  repo had no base branch and PR creation failed ("no base branch ... tried
+  'main'"). The work branch was joined to it with a merge
+  (`--allow-unrelated-histories`), not a rebase, so nothing was force-pushed.
+- GitHub's **default branch** was still `claude/keen-newton-hcb1bu` (the
+  first branch ever pushed becomes the default). The user should switch it to
+  `main` under GitHub repo Settings, then General, then Default branch. Claude
+  has no tool to change this setting.
 
 ---
 
@@ -101,6 +109,10 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 4. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-01**: Created the `main` branch (empty initial commit) so PRs
+  can target it, and merged it into `claude/keen-newton-hcb1bu`. The PR from
+  the work branch into `main` now shows all project files as additions.
 
 - **2026-10-01**: Created this handoff system: `HANDOFF.md`, `CLAUDE.md`
   rules, and a Stop hook (`.claude/hooks/handoff-check.sh`) that blocks ending
