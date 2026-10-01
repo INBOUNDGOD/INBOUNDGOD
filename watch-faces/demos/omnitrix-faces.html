@@ -1,0 +1,280 @@
+<title>Omnitrix Faces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: a header strip with the Always-On toggle, then three watch cards that wrap to one column on phones.
+   Single dark look on purpose: watch screens are black, so the page stays dark in both themes. */
+:root {
+  --bg: #0a0d0b;
+  --surface: #111612;
+  --line: #213026;
+  --fg: #e3ece5;
+  --muted: #8a998e;
+  --accent: #62e83c;
+  --accent-ink: #06230a;
+  --display: "Oxanium", "Eurostile", "Segoe UI", system-ui, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 56px; display: grid; gap: 32px; }
+
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; }
+header .intro { display: grid; gap: 8px; min-width: 0; max-width: 62ch; }
+.eyebrow { font-family: var(--display); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0; }
+
+.toggle { display: inline-flex; align-items: center; gap: 12px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px 8px 8px; font: 600 14px var(--body); cursor: pointer; }
+.toggle .knob { width: 40px; height: 22px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s; }
+.toggle .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+.toggle[aria-pressed="true"] .knob { background: var(--accent-ink); }
+.toggle[aria-pressed="true"] .knob::after { transform: translateX(18px); background: var(--accent); }
+.toggle:focus-visible, .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px 22px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.watch { width: min(100%, 300px); aspect-ratio: 1; margin: 0 auto; border-radius: 50%; padding: 10px; background: radial-gradient(circle at 30% 25%, #3b403d, #151816 60%, #0b0d0c); box-shadow: 0 0 0 1px #000, 0 14px 40px rgba(0,0,0,.55), inset 0 1px 2px rgba(255,255,255,.15); max-width: 100%; }
+.watch svg { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.card h2 { font-family: var(--display); font-size: 22px; font-weight: 600; margin: 0; }
+.card p { margin: 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chips li { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 2px 10px; }
+.code { font-family: var(--display); font-size: 12px; letter-spacing: .12em; color: var(--accent); }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; border-top: 1px solid var(--line); padding-top: 24px; }
+.notes h3 { font-family: var(--display); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; color: var(--accent); }
+.notes p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+/* Watch face modes */
+svg .aod { display: none; }
+.aod-on svg .full { display: none; }
+.aod-on svg .aod { display: inline; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="intro">
+      <p class="eyebrow">Galaxy Watch4 · SM-R870 · 450 × 450 round</p>
+      <h1>Omnitrix Faces</h1>
+      <p class="lead">Three demo designs running on your current time. Turn on Always-On to see the dimmed version the watch shows when your wrist is down.</p>
+    </div>
+    <button class="toggle" id="aodToggle" type="button" aria-pressed="false"><span class="knob" aria-hidden="true"></span>Always-On preview</button>
+  </header>
+
+  <section class="faces" id="faces">
+    <article class="card">
+      <div class="watch" id="w-classic"></div>
+      <span class="code">Demo 1</span>
+      <h2>Classic Omnitrix</h2>
+      <p>The original-series dial. Hours sit in the left black wedge and minutes in the right. The date and battery go on the green hourglass, and a green dot circles the ring for seconds.</p>
+      <ul class="chips"><li>Digital</li><li>Date</li><li>Battery</li><li>Steps</li><li>Seconds dot</li></ul>
+    </article>
+    <article class="card">
+      <div class="watch" id="w-ultimatrix"></div>
+      <span class="code">Demo 2</span>
+      <h2>Ultimatrix</h2>
+      <p>Ultimate Alien style. Big digital time over a glowing hourglass outline, with a chunky black ring that lights one green segment per second.</p>
+      <ul class="chips"><li>Digital</li><li>Date</li><li>Battery</li><li>Steps</li><li>Seconds ring</li></ul>
+    </article>
+    <article class="card">
+      <div class="watch" id="w-analog"></div>
+      <span class="code">Demo 3</span>
+      <h2>Omnitrix Analog</h2>
+      <p>Hands over the hourglass dial. Glowing slots on the bezel mark the hours, the day and date sit in the black wedges, and the second hand is red like the Omnitrix timing out.</p>
+      <ul class="chips"><li>Analog</li><li>Day</li><li>Date</li><li>Red second hand</li></ul>
+    </article>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h3>Pick one</h3>
+      <p>Tell me which demo you want, or mix parts (for example the Ultimatrix ring with the analog hands). I'll then draw every layer at full 450 × 450 resolution and write a step-by-step build sheet for Watch Face Studio. From there you click Run on device to put it on the watch.</p>
+    </div>
+    <div>
+      <h3>Sample numbers</h3>
+      <p>Battery (82%) and steps (6,214) are placeholders here. On the watch they read live from your Galaxy Watch4. The time and date are real.</p>
+    </div>
+    <div>
+      <h3>Personal use</h3>
+      <p>These are fan-made, Omnitrix-inspired drawings, fine on your own wrist. Ben 10 belongs to Cartoon Network, so don't publish it to the Galaxy Store or Google Play.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var C = 225;
+  var GREEN = "#62e83c", GREEN_HI = "#9dff6e", GREEN_DIM = "#2f8f22", WEDGE = "#090c0a";
+  var DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  var BATTERY = "82%", STEPS = "6,214";
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Clock-style angle: 0 = 12 o'clock, clockwise.
+  function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; }
+  function f(n) { return n.toFixed(2); }
+  function sector(r, d1, d2) {
+    var p1 = pt(r, d1), p2 = pt(r, d2), large = (d2 - d1) > 180 ? 1 : 0;
+    return "M" + C + " " + C + "L" + f(p1[0]) + " " + f(p1[1]) + "A" + r + " " + r + " 0 " + large + " 1 " + f(p2[0]) + " " + f(p2[1]) + "Z";
+  }
+  // Green hourglass = top + bottom sectors; black wedges = left + right.
+  function hourglass(r, half) { return sector(r, -half, half) + sector(r, 180 - half, 180 + half); }
+  function wedges(r, half) { var w = 90 - half; return sector(r, 90 - w, 90 + w) + sector(r, 270 - w, 270 + w); }
+  function svg(inner) { return '<svg viewBox="0 0 450 450" xmlns="http://www.w3.org/2000/svg" role="img">' + inner + "</svg>"; }
+  function txt(id, x, y, size, fill, weight, extra) {
+    return '<text id="' + id + '" x="' + x + '" y="' + y + '" font-family="Oxanium, sans-serif" font-size="' + size + '" font-weight="' + (weight || 700) + '" fill="' + fill + '" text-anchor="middle" dominant-baseline="central" ' + (extra || "") + "></text>";
+  }
+  function caseRing(id) {
+    var s = '<defs><linearGradient id="' + id + '-case" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9aa1a6"/><stop offset=".45" stop-color="#4a5055"/><stop offset="1" stop-color="#1b1e21"/></linearGradient>' +
+      '<radialGradient id="' + id + '-green" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="' + GREEN_HI + '"/><stop offset=".55" stop-color="' + GREEN + '"/><stop offset="1" stop-color="' + GREEN_DIM + '"/></radialGradient></defs>';
+    s += '<circle cx="225" cy="225" r="225" fill="#000"/>';
+    s += '<circle cx="225" cy="225" r="206" fill="none" stroke="url(#' + id + '-case)" stroke-width="38"/>';
+    for (var i = 0; i < 60; i++) s += '<line x1="225" y1="4" x2="225" y2="10" stroke="#24282b" stroke-width="2" transform="rotate(' + i * 6 + ' 225 225)"/>';
+    return s;
+  }
+
+  /* ---------- Demo 1: Classic Omnitrix ---------- */
+  function classic() {
+    var s = '<g class="full">' + caseRing("c");
+    [45, 135, 225, 315].forEach(function (d) {
+      s += '<g transform="rotate(' + d + ' 225 225)"><rect x="210" y="7" width="30" height="24" rx="6" fill="#0b0d0c"/><rect x="216" y="11" width="18" height="15" rx="3" fill="' + GREEN + '" opacity=".9"/></g>';
+    });
+    s += '<circle cx="225" cy="225" r="187" fill="#101412"/>';
+    for (var i = 0; i < 60; i++) s += '<circle cx="225" cy="50" r="' + (i % 5 ? 1.2 : 2.2) + '" fill="#2c3a30" transform="rotate(' + i * 6 + ' 225 225)"/>';
+    s += '<circle id="c-sec" cx="225" cy="50" r="4.5" fill="' + GREEN_HI + '"/>';
+    s += '<circle cx="225" cy="225" r="164" fill="none" stroke="' + GREEN + '" stroke-width="3"/>';
+    s += '<circle cx="225" cy="225" r="160" fill="url(#c-green)"/>';
+    s += '<path d="' + wedges(161, 52) + '" fill="' + WEDGE + '"/>';
+    s += txt("c-h", 127, 228, 60, GREEN_HI) + txt("c-m", 323, 228, 60, GREEN_HI);
+    s += txt("c-date", 225, 112, 19, "#06230a", 700, 'letter-spacing="2"');
+    s += txt("c-bat", 225, 322, 17, "#06230a", 700, 'letter-spacing="1"');
+    s += txt("c-steps", 225, 346, 13, "#06230a", 600, 'letter-spacing="1.5"');
+    s += "</g>";
+    // Always-On: outlines only, low lit-pixel count
+    s += '<g class="aod"><circle cx="225" cy="225" r="225" fill="#000"/><circle cx="225" cy="225" r="186" fill="none" stroke="#1d2620" stroke-width="2"/>';
+    s += '<path d="' + hourglass(160, 52) + '" fill="none" stroke="' + GREEN_DIM + '" stroke-width="2.5"/>';
+    s += txt("c-h2", 127, 228, 60, GREEN) + txt("c-m2", 323, 228, 60, GREEN) + "</g>";
+    return svg(s);
+  }
+
+  /* ---------- Demo 2: Ultimatrix ---------- */
+  function ultimatrix() {
+    var s = '<defs><radialGradient id="u-bg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#123a19"/><stop offset=".6" stop-color="#06140a"/><stop offset="1" stop-color="#010302"/></radialGradient>' +
+      '<linearGradient id="u-ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3033"/><stop offset="1" stop-color="#0b0d0e"/></linearGradient>' +
+      '<filter id="u-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    s += '<g class="full"><circle cx="225" cy="225" r="225" fill="#000"/>';
+    s += '<circle cx="225" cy="225" r="201" fill="none" stroke="url(#u-ring)" stroke-width="48"/>';
+    for (var i = 0; i < 60; i++) {
+      var big = i % 15 === 0;
+      s += '<rect id="u-s' + i + '" x="' + (big ? 220.5 : 222) + '" y="' + (big ? 9 : 12) + '" width="' + (big ? 9 : 6) + '" height="' + (big ? 28 : 21) + '" rx="1.5" fill="#17241a" transform="rotate(' + i * 6 + ' 225 225)"/>';
+    }
+    [45, 135, 225, 315].forEach(function (d) {
+      s += '<g transform="rotate(' + d + ' 225 225)"><path d="M213 50 L237 50 L232 60 L218 60Z" fill="' + GREEN + '"/></g>';
+    });
+    s += '<circle cx="225" cy="225" r="175" fill="#030504" stroke="' + GREEN + '" stroke-width="2.5"/>';
+    s += '<circle cx="225" cy="225" r="168" fill="url(#u-bg)"/>';
+    s += '<path d="' + hourglass(150, 44) + '" fill="rgba(98,232,60,.07)" stroke="' + GREEN + '" stroke-opacity=".45" stroke-width="3"/>';
+    s += txt("u-date", 225, 142, 17, GREEN, 600, 'letter-spacing="3"');
+    s += txt("u-t", 225, 230, 92, "#effff0", 700, 'filter="url(#u-glow)" letter-spacing="1"');
+    s += txt("u-bat", 180, 300, 22, "#effff0", 600) + txt("u-batl", 180, 322, 10, GREEN, 600, 'letter-spacing="2"');
+    s += txt("u-steps", 270, 300, 22, "#effff0", 600) + txt("u-stepsl", 270, 322, 10, GREEN, 600, 'letter-spacing="2"');
+    s += "</g>";
+    s += '<g class="aod"><circle cx="225" cy="225" r="225" fill="#000"/>';
+    for (var q = 0; q < 4; q++) s += '<rect x="221" y="12" width="8" height="24" rx="1.5" fill="' + GREEN_DIM + '" transform="rotate(' + q * 90 + ' 225 225)"/>';
+    s += '<path d="' + hourglass(150, 44) + '" fill="none" stroke="#1f5a1a" stroke-width="2"/>';
+    s += txt("u-t2", 225, 230, 92, "#000", 700, 'stroke="' + GREEN + '" stroke-width="2" letter-spacing="1"');
+    s += txt("u-date2", 225, 142, 17, GREEN_DIM, 600, 'letter-spacing="3"') + "</g>";
+    return svg(s);
+  }
+
+  /* ---------- Demo 3: Omnitrix Analog ---------- */
+  function hands(prefix, outline) {
+    var hourFill = outline ? "#000" : "#1a1f1c", edge = outline ? GREEN : "#cfd8d2";
+    var s = '<g id="' + prefix + '-h"><path d="M216 242 L234 242 L231 138 L225 122 L219 138Z" fill="' + hourFill + '" stroke="' + edge + '" stroke-width="2" stroke-linejoin="round"/>' +
+      (outline ? "" : '<line x1="225" y1="215" x2="225" y2="142" stroke="' + GREEN + '" stroke-width="4" stroke-linecap="round"/>') + "</g>";
+    s += '<g id="' + prefix + '-m"><path d="M219 248 L231 248 L229 86 L225 68 L221 86Z" fill="' + hourFill + '" stroke="' + edge + '" stroke-width="2" stroke-linejoin="round"/>' +
+      (outline ? "" : '<line x1="225" y1="210" x2="225" y2="92" stroke="' + GREEN + '" stroke-width="3" stroke-linecap="round"/>') + "</g>";
+    if (!outline) {
+      s += '<g id="' + prefix + '-s"><line x1="225" y1="262" x2="225" y2="60" stroke="#ff3b30" stroke-width="2.5" stroke-linecap="round"/><circle cx="225" cy="252" r="6" fill="#ff3b30"/></g>';
+    }
+    s += '<circle cx="225" cy="225" r="12" fill="#1a1f1c" stroke="' + edge + '" stroke-width="2"/><circle cx="225" cy="225" r="4.5" fill="' + (outline ? GREEN_DIM : "#ff3b30") + '"/>';
+    return s;
+  }
+  function analog() {
+    var s = '<g class="full">' + caseRing("a");
+    for (var h = 0; h < 12; h++) {
+      var main = h % 3 === 0;
+      s += '<g transform="rotate(' + h * 30 + ' 225 225)">' + (main
+        ? '<rect x="210" y="6" width="30" height="27" rx="6" fill="#0b0d0c"/><rect x="216" y="10" width="18" height="19" rx="3" fill="' + GREEN + '"/>'
+        : '<rect x="219" y="9" width="12" height="21" rx="3" fill="#0b0d0c"/><rect x="222" y="12" width="6" height="15" rx="2" fill="' + GREEN + '" opacity=".85"/>') + "</g>";
+    }
+    s += '<circle cx="225" cy="225" r="187" fill="#101412"/>';
+    for (var i = 0; i < 60; i++) s += '<line x1="225" y1="42" x2="225" y2="' + (i % 5 ? 49 : 54) + '" stroke="' + (i % 5 ? "#33443a" : "#6c8a74") + '" stroke-width="' + (i % 5 ? 1.5 : 3) + '" transform="rotate(' + i * 6 + ' 225 225)"/>';
+    s += '<circle cx="225" cy="225" r="168" fill="none" stroke="' + GREEN + '" stroke-width="3"/>';
+    s += '<circle cx="225" cy="225" r="164" fill="url(#a-green)"/>';
+    s += '<path d="' + wedges(165, 52) + '" fill="' + WEDGE + '"/>';
+    s += '<rect x="300" y="208" width="46" height="34" rx="6" fill="#141a16" stroke="' + GREEN + '" stroke-width="1.5"/>' + txt("a-date", 323, 226, 20, GREEN_HI);
+    s += txt("a-day", 127, 226, 18, GREEN_HI, 600, 'letter-spacing="2"');
+    s += hands("a", false) + "</g>";
+    s += '<g class="aod"><circle cx="225" cy="225" r="225" fill="#000"/>';
+    for (var q = 0; q < 4; q++) s += '<rect x="217" y="11" width="16" height="18" rx="3" fill="none" stroke="' + GREEN_DIM + '" stroke-width="2" transform="rotate(' + q * 90 + ' 225 225)"/>';
+    s += '<path d="' + hourglass(164, 52) + '" fill="none" stroke="#1f5a1a" stroke-width="2"/>';
+    s += hands("a2", true) + "</g>";
+    return svg(s);
+  }
+
+  document.getElementById("w-classic").innerHTML = classic();
+  document.getElementById("w-ultimatrix").innerHTML = ultimatrix();
+  document.getElementById("w-analog").innerHTML = analog();
+  ["c-bat", "u-bat"].forEach(function (id) { document.getElementById(id).textContent = id === "c-bat" ? "BATTERY " + BATTERY : BATTERY; });
+  document.getElementById("c-steps").textContent = STEPS + " STEPS";
+  document.getElementById("u-steps").textContent = STEPS;
+  document.getElementById("u-batl").textContent = "BATTERY";
+  document.getElementById("u-stepsl").textContent = "STEPS";
+  document.querySelectorAll(".watch svg").forEach(function (el, i) {
+    el.setAttribute("aria-label", ["Classic Omnitrix", "Ultimatrix", "Omnitrix Analog"][i] + " watch face preview");
+  });
+
+  function set(id, v) { var el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
+  function rot(id, deg) { var el = document.getElementById(id); if (el) el.setAttribute("transform", "rotate(" + deg.toFixed(2) + " 225 225)"); }
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  var lastSec = -1;
+
+  function tick() {
+    var now = new Date();
+    var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+    var hh = pad(h), mm = pad(m), dd = pad(now.getDate()), day = DAYS[now.getDay()];
+    set("c-h", hh); set("c-m", mm); set("c-h2", hh); set("c-m2", mm);
+    set("c-date", day + " " + dd);
+    set("u-t", hh + ":" + mm); set("u-t2", hh + ":" + mm);
+    set("u-date", day + " · " + MONTHS[now.getMonth()] + " " + dd); set("u-date2", day + " " + dd);
+    set("a-date", dd); set("a-day", day);
+
+    var secAngle = reduceMotion ? s * 6 : (s + ms / 1000) * 6;
+    rot("c-sec", s * 6);
+    var minAngle = (m + s / 60) * 6, hourAngle = ((h % 12) + m / 60) * 30;
+    rot("a-h", hourAngle); rot("a-m", minAngle); rot("a-s", secAngle);
+    rot("a2-h", hourAngle); rot("a2-m", m * 6);
+
+    if (s !== lastSec) {
+      for (var i = 0; i < 60; i++) {
+        var seg = document.getElementById("u-s" + i);
+        seg.setAttribute("fill", i <= s ? (i % 15 === 0 ? "#b8ff9a" : GREEN) : "#17241a");
+      }
+      lastSec = s;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  var faces = document.getElementById("faces"), toggle = document.getElementById("aodToggle");
+  toggle.addEventListener("click", function () {
+    var on = toggle.getAttribute("aria-pressed") !== "true";
+    toggle.setAttribute("aria-pressed", on ? "true" : "false");
+    faces.classList.toggle("aod-on", on);
+  });
+})();
+</script>
