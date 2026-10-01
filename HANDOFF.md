@@ -86,6 +86,9 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
   needs nothing else.
 - Repo: `INBOUNDGOD/INBOUNDGOD`. Work happens on branch
   `claude/keen-newton-hcb1bu`; pull requests go into `main`.
+- Open PR: https://github.com/INBOUNDGOD/INBOUNDGOD/pull/1
+  (`claude/keen-newton-hcb1bu` → `main`). Every push to the branch updates
+  it, so don't open a second PR for this work.
 - `main` was created on 2026-10-01 as an empty "Initial commit" because the
   repo had no base branch and PR creation failed ("no base branch ... tried
   'main'"). The work branch was joined to it with a merge
@@ -109,6 +112,9 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 4. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-01**: User opened PR INBOUNDGOD/INBOUNDGOD#1
+  (https://github.com/INBOUNDGOD/INBOUNDGOD/pull/1) from the Claude Code UI.
 
 - **2026-10-01**: Created the `main` branch (empty initial commit) so PRs
   can target it, and merged it into `claude/keen-newton-hcb1bu`. The PR from
