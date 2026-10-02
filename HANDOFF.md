@@ -233,7 +233,14 @@ real names or answers from people.
 heavily and the NVIDIA driver never installs properly. They suspect VRAM chip
 "A1" and want the board schematic/boardview to attempt a repair.
 
-**Not yet known: which brand.** The name is ambiguous. "Dual OC … V1" matches
+**Brand confirmed: Palit** (from the user's recovered ChatGPT history). The
+Palit Dual uses NVIDIA reference board PG142 SKU 20 (TechPowerUp). ASUS
+files are irrelevant. Full notes and the MODS excerpt: `gpu-repair/notes.md`.
+**Diagnosis so far:** MODS shows FBIOA1 with 205,298 write errors, failing
+bits A032–A039 = one byte lane of the FBIOA1 chip. Physical chip for FBIOA1
+not yet identified (needs boardview or a freeze-spray test).
+
+Earlier note: the name was ambiguous. "Dual OC … V1" matches
 the **Palit GeForce RTX 3060 Ti Dual OC V1** exactly, but ASUS also sells a
 **Dual RTX 3060 Ti OC (DUAL-RTX3060TI-O8G)**. A ChatGPT chat the user shared
 (https://chatgpt.com/share/6abfcd1d-9f40-83e9-a013-eb39fd9ce8ad) assumed ASUS.
@@ -268,7 +275,7 @@ practice. Diagnose first (MATS/MODS run, rail resistance checks) before
 removing anything.
 
 **Status:** waiting on the user's PCB photos (front, back, chip markings, PCB
-code). Files folder: `gpu-repair/` (empty so far).
+code). Files folder: `gpu-repair/` (`notes.md`).
 
 ---
 
@@ -338,6 +345,9 @@ code). Files folder: `gpu-repair/` (empty so far).
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: GPU: confirmed Palit (PG142 SKU 20). Saved the MODS excerpt
+  and interpretation in `gpu-repair/notes.md`.
 
 - **2026-10-02**: New project 1c: RTX 3060 Ti repair. Researched schematic
   and boardview sources; brand (ASUS vs Palit) still unconfirmed. Watch:
