@@ -110,6 +110,33 @@ printed on the PCB next to each chip.
    orientation of the removed chip. Needs stencil/preballed chip, flux,
    kapton to shield neighbours, preheater.
 
+## Multimeter test points (2026-10-02)
+Annotated photos: `photos/annotated-01-front-test-points.jpg` and
+`photos/annotated-02-back-test-points.jpg`. Card unplugged, black lead on a
+screw-hole ring, diode or ohm mode:
+1. GPU core rail: the 6 black coils by the ON 3020 stages → 1–10 Ω to ground.
+2. Blue FP5K polymer caps → measure across each; 0 Ω = dead.
+3. Memory rail coils (L45/L46 by the 8-pin, L50 and L52 by Q14/Q15 near the
+   fan header) → 20–300 Ω to ground; near 0 = shorted chip/cap.
+4. 8-pin 12 V → > 1 kΩ to ground.
+5. Aux coils (1R0 by U14, 1R0 and 4R7 near HDMI) → hundreds of Ω or more.
+6. Small caps between M1 and M3 (after cleaning the debris) → same as the
+   memory rail, none at 0 Ω, none cracked.
+7. Caps on the back behind the GPU → inspect for cracks; ~1–10 Ω (core rail).
+8. Area on the back behind M1 → inspect, measure caps.
+Optional powered check in MODS: memory rail coil pad ≈ 1.35 V.
+
+## MODS/MATS source (2026-10-02)
+levirepair.eu thread "Nvidia MATS & MODS USB stick (with NVMT)": 2.31 GB .7z
+(OneDrive + pixeldrain mirror https://pixeldrain.com/u/ksBpKU3b), MD5 of the
+image 3cc2ce1e4b9836548a8fad6479a2c4c3, needs a 32 GB stick, Rufus included.
+Boot → pick the 30xx entry → `mats` (card is primary) or `modsinit` then
+`mats -n 1` (card secondary). Use `mats -b 60 -e 70` to avoid the false
+32/40 write errors on every partition (that explains the baseline in the
+user's report). Per-partition VRAM temperature logging:
+`./mods gputest.js -test 13 -run_on_error -bg_dram_temp 1000` (useful to
+map a warmed chip to its FBIO name).
+
 ## File sources checked (2026-10-02)
 - badcaps.net thread 3706166 "Boardview rtx 3060ti Palit": request only, no
   file posted.
