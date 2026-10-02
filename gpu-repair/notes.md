@@ -41,9 +41,14 @@ FBIOD1            0           40            0
   barcode sticker (B21OB009 2+00156). No "PG142" text seen; the exact Palit
   PCB code may be on the back (not photographed yet).
 - GPU: NVIDIA **GA104-202-A1**, date code 2139A1 (SA1HKN.M3P).
-- VRAM: 8 × SK hynix GDDR6, read as **H56G32CS4D X005 130A** (needs
-  confirming under magnification; the correct part number is the shopping
-  list for a replacement). Lot line under it reads like "ATDDH264W23".
+- VRAM: 8 × SK hynix GDDR6 **H56G32CS4D-X005** (confirmed from a macro
+  photo, 2026-10-02): 8 Gb, 1.35 V, 180-ball FBGA (0.75 mm pitch). Sold new
+  on AliExpress/eBay/gpufix.de for a few USD each. Hynix "X005" memory on
+  3060 Ti cards has a reputation for failing with artifacts, which supports
+  the VRAM diagnosis.
+- Back of PCB: "SH14 94V-0 E248779", date code 2138; "MADE IN CHINA"; FCC/CE
+  label. No visible damage behind M1. The "PG" silkscreen next to the sticker
+  is cut off by the GPU stiffener frame; probably "PG142".
 - VRM: 6 phases of ON Semi 3020 power stages along the bracket side (one
   phase pad looks unpopulated), uP9512 controller (U8001 area), inductors
   1R0 2134/2136, 4R7 2128. Blue FP5K polymer caps.
@@ -62,8 +67,12 @@ No chips on the bracket side of the GPU. Reference designators M1..M8 are
 printed on the PCB next to each chip.
 
 - **User's belief: FBIOA1 = M1** (bottom-left chip, above the PCIe
-  connector). Basis not yet stated; treat as unverified until a freeze-spray
-  test or the boardview confirms it.
+  connector). Basis (user, 2026-10-02): MATS reported FBIOA1, and "research"
+  said that is M1. Still not physically verified; a heat/freeze test while
+  MODS runs is the cheap confirmation.
+- **Debris:** macro photos show copper-coloured fibres/strands in the gap
+  between M1 and M3, lying over the row of small capacitors between the two
+  chips. Must be cleaned (IPA + soft brush) and inspected before any rework.
 - Condition seen in photos: white thermal-pad residue around the GPU and
   memory; old paste on the die; a few small copper/orange specks between M1
   and M3 along their edges (check and clean before anything else).
@@ -73,6 +82,21 @@ printed on the PCB next to each chip.
   or a physical test: run MODS and chill one chip at a time with freeze
   spray (or warm it with a heat gun on low); the chip whose cooling/heating
   changes the FBIOA1 error count is the one.
+
+## User's tools (2026-10-02)
+- Hot-air station and "other tools" (details not listed yet).
+
+## Plan agreed in chat (2026-10-02)
+1. Clean the board (IPA), remove the copper debris between M1 and M3.
+2. Verify the chip: run MODS, warm M1 alone with hot air on low (~100 °C)
+   or chill it with freeze spray; FBIOA1 count should change. If another
+   chip changes it instead, that chip is A1.
+3. Optional first attempt: reflow M1 (preheat board ~150 °C from below,
+   flux, hot air ~380 °C with a nozzle, 60–90 s, cool undisturbed). Fixes
+   cracked balls only; retest with MODS.
+4. If still failing: replace M1 with a new H56G32CS4D-X005. Keep the pin-1
+   orientation of the removed chip. Needs stencil/preballed chip, flux,
+   kapton to shield neighbours, preheater.
 
 ## File sources checked (2026-10-02)
 - badcaps.net thread 3706166 "Boardview rtx 3060ti Palit": request only, no

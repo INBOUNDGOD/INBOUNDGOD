@@ -274,12 +274,13 @@ chip (same part number, e.g. Samsung K4Z80325BC or Hynix H56C8H24AIR), and
 practice. Diagnose first (MATS/MODS run, rail resistance checks) before
 removing anything.
 
-**Status:** PCB photos received (front only; shrunk copies in
-`gpu-repair/photos/`, layout map in `gpu-repair/notes.md`). PCB silkscreen
-"SP019-U"; Hynix GDDR6 (part number to confirm). User believes FBIOA1 = chip
-**M1** (bottom-left, above PCIe), unverified. Next: confirm with a
-freeze-spray MODS test, confirm the chip part number, check tools, then plan
-the replacement.
+**Status:** front and back PCB photos received (shrunk copies in
+`gpu-repair/photos/`, layout map and plan in `gpu-repair/notes.md`). VRAM
+confirmed **SK hynix H56G32CS4D-X005** (8 Gb GDDR6, 180-FBGA). User has a
+hot-air station. User believes FBIOA1 = chip **M1** (bottom-left, above
+PCIe) from MATS + online research; still to be verified by a heat/freeze
+test. Copper debris seen between M1 and M3 must be cleaned first. Plan:
+clean → verify chip → optional reflow → replace with new H56G32CS4D-X005.
 
 ---
 
@@ -349,6 +350,10 @@ the replacement.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: GPU: more photos (back of PCB, chip macro). Part number
+  confirmed H56G32CS4D-X005. Debris between M1 and M3 noted. Repair plan
+  written in `gpu-repair/notes.md`.
 
 - **2026-10-02**: GPU: user sent bare-PCB photos and says they ran MODS
   themselves; they believe FBIOA1 is chip M1. Saved shrunk photos and the
