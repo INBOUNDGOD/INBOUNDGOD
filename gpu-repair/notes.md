@@ -125,6 +125,12 @@ screw-hole ring, diode or ohm mode:
 7. Caps on the back behind the GPU → inspect for cracks; ~1–10 Ω (core rail).
 8. Area on the back behind M1 → inspect, measure caps.
 Optional powered check in MODS: memory rail coil pad ≈ 1.35 V.
+Probe-point arrows (red = + probe tip): `photos/probe-A-core-coils-caps-aux.jpg`,
+`probe-B-memory-coil-8pin.jpg`, `probe-C-memory-coils-L50-L52.jpg`,
+`probe-D-M1-caps.jpg`. The user's meter is manual-range (200 Ω / 2k / 20k):
+200 Ω for the core coils and any "is it 0?" cap check; 2k for the memory
+rail, aux coils and across caps; 20k for the 8-pin 12 V pins. "1." or "OL"
+on the display = over range, go up one range.
 
 ## MODS/MATS source (2026-10-02)
 levirepair.eu thread "Nvidia MATS & MODS USB stick (with NVMT)": 2.31 GB .7z
