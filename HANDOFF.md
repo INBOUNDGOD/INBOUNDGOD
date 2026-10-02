@@ -74,9 +74,10 @@ ticking and the Ben 10 theme"):
 - **Seconds in Always-On: confirmed not possible in WFS** (user test,
   2026-10-02). An Analog Clock in Always-On only moves the minute hand. The
   user says an older Ben 10 face of theirs had a "spinning circle" set to
-  seconds; that may only have animated in the WFS preview. An optional
-  experiment (an image rotated by `[SEC]*6`) was offered; otherwise
-  Always-On is static art plus green time.
+  seconds; that may only have animated in the WFS preview. Also tested
+  an image rotated by `[SEC]*6`: it doesn't move even in WFS's Always-On
+  preview (which steps per minute, so `[SEC]` stays 0). **Final: Always-On
+  is static art plus green time, no seconds.**
 - WFS reported an Always-On **On Pixel Ratio of 3.1%** for the user's build.
 - A black halo behind the digits stops the hourglass lines crossing them.
 - The demo fades over 0.9 s. On the watch, the switch to Always-On is handled
@@ -229,6 +230,10 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: The `[SEC]*6` rotation test also failed in Always-On.
+  Seconds in Always-On are closed as not possible; the tick layer is to be
+  deleted.
 
 - **2026-10-02**: User built the Always-On layers in WFS (static image +
   green HH:MM, 3.1% on-pixel ratio). Confirmed that Always-On seconds don't

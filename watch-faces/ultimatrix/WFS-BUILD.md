@@ -131,10 +131,10 @@ Always-On version; **delete everything in it** and add only these:
 - Tested by the user: with an **Analog Clock** in Always-On, only the minute
   hand moves; WFS doesn't animate a seconds hand there. The watch only
   redraws Always-On once a minute.
-- Optional last experiment: add `layers/aod_02_seconds_tick.png` as an
-  **Image** (X 0, Y 0, W 450, H 450, Inner Pivot 225, 225) with Rotate
-  Angle set to the expression `[SEC]*6`. Expect it to freeze on the watch
-  too. If it does, leave Always-On as AOD 1 + AOD 2 only.
+- Also tested: an **Image** rotated by `[SEC]*6` (pivot 225, 225). It stays
+  at 12 even in WFS's Always-On preview, which steps one minute at a time
+  ("1M/sec"), so `[SEC]` is always 0 in Always-On. **Final: no seconds in
+  Always-On.** Always-On is AOD 1 + AOD 2 only; delete the tick layer.
 
 WFS's own Run panel showed an **On Pixel Ratio of 3.1%** for AOD 1 + AOD 2.
 
