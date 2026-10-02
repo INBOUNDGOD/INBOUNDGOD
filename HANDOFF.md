@@ -71,11 +71,13 @@ ticking and the Ben 10 theme"):
   15%. Filling the hourglass pushed it to 27%, so the hourglass stays
   outline-only.
 - **Goes:** date, phone battery, full seconds ring, bezel, glow.
-- **Open question: seconds in Always-On.** Wear OS docs and user reports say
-  most faces only redraw once a minute in Always-On. Some faces have still
-  shown ticking seconds, and the user says a Ben 10 skin they made before
-  kept updating. Plan: build it with the seconds mark and test on the
-  Watch4. If it freezes, tell the user and offer options.
+- **Seconds in Always-On: confirmed not possible in WFS** (user test,
+  2026-10-02). An Analog Clock in Always-On only moves the minute hand. The
+  user says an older Ben 10 face of theirs had a "spinning circle" set to
+  seconds; that may only have animated in the WFS preview. An optional
+  experiment (an image rotated by `[SEC]*6`) was offered; otherwise
+  Always-On is static art plus green time.
+- WFS reported an Always-On **On Pixel Ratio of 3.1%** for the user's build.
 - A black halo behind the digits stops the hourglass lines crossing them.
 - The demo fades over 0.9 s. On the watch, the switch to Always-On is handled
   by the system.
@@ -227,6 +229,10 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: User built the Always-On layers in WFS (static image +
+  green HH:MM, 3.1% on-pixel ratio). Confirmed that Always-On seconds don't
+  move (only the minute hand). Updated `WFS-BUILD.md`. Next: Run on device.
 
 - **2026-10-02**: User dropped the phone battery. Removed it from the WFS
   build (user deleting the SmallBox complication), from `WFS-BUILD.md`,

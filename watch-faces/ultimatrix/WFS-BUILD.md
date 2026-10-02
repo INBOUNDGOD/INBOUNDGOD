@@ -127,13 +127,16 @@ Always-On version; **delete everything in it** and add only these:
 - Font **Oxanium Bold**, size **88**, colour **#3FBF28** (solid green)
 - No glow
 
-### AOD 3: Seconds mark (test this one)
-- **Seconds hand** (analog hand) component → `layers/aod_02_seconds_tick.png`
-- X 0, Y 0, W 450, H 450, **rotation centre (225, 225)**
-- Most watch faces only redraw once a minute in Always-On mode, so this may
-  freeze or WFS may not allow a seconds hand here. If WFS refuses it, skip
-  it. If it builds but freezes on the watch, that's the system limit, not
-  a mistake in your build.
+### AOD 3: Seconds mark: doesn't work (tested 2026-10-02)
+- Tested by the user: with an **Analog Clock** in Always-On, only the minute
+  hand moves; WFS doesn't animate a seconds hand there. The watch only
+  redraws Always-On once a minute.
+- Optional last experiment: add `layers/aod_02_seconds_tick.png` as an
+  **Image** (X 0, Y 0, W 450, H 450, Inner Pivot 225, 225) with Rotate
+  Angle set to the expression `[SEC]*6`. Expect it to freeze on the watch
+  too. If it does, leave Always-On as AOD 1 + AOD 2 only.
+
+WFS's own Run panel showed an **On Pixel Ratio of 3.1%** for AOD 1 + AOD 2.
 
 **Brightness check:** this Always-On design lights about **9.5%** of the
 screen. Samsung's guideline is about 15%. If WFS warns about the
