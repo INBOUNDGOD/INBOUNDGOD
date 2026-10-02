@@ -46,9 +46,16 @@ left and the centre at (225, 225).
    window). Each new layer appears in the **layer list on the left**, and its
    position, size, font and colour are set in **Properties / Style on the
    right**.
-5. Add the font the first time you style a text or clock component: in its
-   font setting, choose the option to add/import a font, and add both
-   `Oxanium-Bold.ttf` and `Oxanium-SemiBold.ttf`.
+5. **Install the fonts in Windows first.** WFS doesn't import fonts itself;
+   it lists fonts installed on the PC. Right-click `fonts/Oxanium-Bold.ttf`
+   → **Install**, same for `Oxanium-SemiBold.ttf`, then **restart WFS**.
+   Font, size, colour and alignment are set in the **Properties** tab (text
+   section) of a text or clock component, **not** the Style tab.
+6. Menu names (current WFS): **+ Add Component** → Text, Preset image, Photo
+   slot, Shape, Progress bar, Animation; *Time & Date*: Analog Clock,
+   **Digital Clock ▸** (pick hour:minute), **ICU date and time** (for the
+   date), Index, More; *Complication Slot*: Circle, Edge, Line, SmallBox,
+   LargeBox.
 
 **Tip for exact placement:** add `preview/preview_active.png` as a temporary
 image layer on top at about 50% opacity. Line your text up with it, then

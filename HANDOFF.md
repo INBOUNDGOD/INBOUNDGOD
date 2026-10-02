@@ -230,6 +230,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: Learned from the user's WFS: fonts must be **installed in
+  Windows** (WFS lists system fonts), and font settings are under
+  **Properties**, not Style. Recorded the Add Component menu names in
+  `WFS-BUILD.md`. The user is adding the Digital Clock now.
+
 - **2026-10-02**: In WFS, the user has the background, seconds progress bar
   and bezel overlay in, and the seconds slots tick correctly in WFS's
   preview. Recorded the exact working progress-bar settings in
