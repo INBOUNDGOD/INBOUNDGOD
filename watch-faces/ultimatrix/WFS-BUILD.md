@@ -127,14 +127,19 @@ Always-On version; **delete everything in it** and add only these:
 - Font **Oxanium Bold**, size **88**, colour **#3FBF28** (solid green)
 - No glow
 
-### AOD 3: Seconds mark: doesn't work (tested 2026-10-02)
-- Tested by the user: with an **Analog Clock** in Always-On, only the minute
-  hand moves; WFS doesn't animate a seconds hand there. The watch only
-  redraws Always-On once a minute.
-- Also tested: an **Image** rotated by `[SEC]*6` (pivot 225, 225). It stays
-  at 12 even in WFS's Always-On preview, which steps one minute at a time
-  ("1M/sec"), so `[SEC]` is always 0 in Always-On. **Final: no seconds in
-  Always-On.** Always-On is AOD 1 + AOD 2 only; delete the tick layer.
+### AOD 3: Minute marker (orbits once an hour)
+- **Image** → `layers/aod_02_seconds_tick.png`, X 0, Y 0, W 450, H 450,
+  Inner Pivot 225, 225
+- In its properties, turn on **Radial indicator → Apply Rotation Properties**:
+  - **Sync with: Minute in Hour**
+  - **Value: Start 0, End 60**
+  - **Rotate: 360°, CW**
+- It steps one notch per minute around the rim, so Always-On never looks
+  frozen.
+- Why not seconds: Always-On only redraws once a minute (WFS's AOD preview
+  runs at "1M/sec"). The user tested an Analog Clock seconds hand, a
+  `[SEC]*6` rotation and a Radial indicator synced to seconds; none move in
+  Always-On. Synced to **minutes**, it works (user-confirmed 2026-10-02).
 
 WFS's own Run panel showed an **On Pixel Ratio of 3.1%** for AOD 1 + AOD 2.
 

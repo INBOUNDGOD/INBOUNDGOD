@@ -76,8 +76,10 @@ ticking and the Ben 10 theme"):
   user says an older Ben 10 face of theirs had a "spinning circle" set to
   seconds; that may only have animated in the WFS preview. Also tested
   an image rotated by `[SEC]*6`: it doesn't move even in WFS's Always-On
-  preview (which steps per minute, so `[SEC]` stays 0). **Final: Always-On
-  is static art plus green time, no seconds.**
+  preview (which steps per minute, so `[SEC]` stays 0). Seconds are
+  impossible in Always-On. **Final (user-confirmed):** the tick image is a
+  **Radial indicator synced to Minute in Hour** (value 0–60, 360° CW), so it
+  orbits the rim one step per minute.
 - WFS reported an Always-On **On Pixel Ratio of 3.1%** for the user's build.
 - A black halo behind the digits stops the hourglass lines crossing them.
 - The demo fades over 0.9 s. On the watch, the switch to Always-On is handled
@@ -230,6 +232,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: The user found the WFS **Radial indicator** option. Synced
+  to seconds it doesn't move in Always-On; synced to **Minute in Hour** it
+  works. That's now the Always-On marker. `WFS-BUILD.md` AOD 3 updated.
+  Next: Run on device.
 
 - **2026-10-02**: The `[SEC]*6` rotation test also failed in Always-On.
   Seconds in Always-On are closed as not possible; the tick layer is to be
