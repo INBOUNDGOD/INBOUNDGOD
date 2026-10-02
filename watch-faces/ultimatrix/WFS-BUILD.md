@@ -35,12 +35,20 @@ left and the centre at (225, 225).
 
 ## 1. Set up the project
 
-1. Copy this whole `ultimatrix` folder to your PC.
-2. Open Watch Face Studio → **New Project** → pick a **digital** watch face
-   template → name it `Ultimatrix`.
-3. Check the canvas is **450 × 450, round**. That's the Galaxy Watch4 44 mm screen.
-4. Add the font: in a text component's **Font** setting, choose **Add font**
-   (or import font) and add both `Oxanium-Bold.ttf` and `Oxanium-SemiBold.ttf`.
+1. Unzip / copy this whole `ultimatrix` folder to your PC.
+2. Open Watch Face Studio → **New Project** → shape **Circle** → name it
+   `Ultimatrix`. Current WFS versions **don't ask for digital or analog**.
+   The project starts empty (black circle, "No layers"), and the clock is
+   added later as a component.
+3. Check the canvas is round with background **#000000**. That's the Galaxy
+   Watch4 44 mm screen (450 × 450).
+4. Everything is added with the **+ Add Component** button (top centre of the
+   window). Each new layer appears in the **layer list on the left**, and its
+   position, size, font and colour are set in **Properties / Style on the
+   right**.
+5. Add the font the first time you style a text or clock component: in its
+   font setting, choose the option to add/import a font, and add both
+   `Oxanium-Bold.ttf` and `Oxanium-SemiBold.ttf`.
 
 **Tip for exact placement:** add `preview/preview_active.png` as a temporary
 image layer on top at about 50% opacity. Line your text up with it, then
@@ -112,7 +120,8 @@ list is the front**, so the last one added should end up highest.
 
 ## 3. Always-On layers
 
-Switch the editor to **Always-on** (AOD) mode. WFS creates an automatic
+Switch the editor to **Always-on** (AOD) mode with the Always-on button in
+the narrow icon strip next to the layer list (under the layers icon). WFS creates an automatic
 Always-On version; **delete everything in it** and add only these:
 
 ### AOD 1: Static

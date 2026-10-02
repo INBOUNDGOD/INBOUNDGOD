@@ -230,6 +230,12 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: User started in WFS (screenshot: empty Circle project
+  "ultimatrix", "No layers"). Their WFS version has no digital/analog
+  template choice, so `WFS-BUILD.md` section 1 was corrected. Walked them
+  through adding the first layers with **+ Add Component**. Their WFS also
+  has a **Mask** tool, a possible alternative to the bezel-overlay trick.
+
 - **2026-10-02**: User approved Ultimatrix v2. Built the kit in
   `watch-faces/ultimatrix/` (layers, fonts, previews, SVG, `render-layers.js`,
   `WFS-BUILD.md`). Researched: phone battery needs a complication provider;
