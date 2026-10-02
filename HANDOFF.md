@@ -166,6 +166,52 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ---
 
+## 1b. Active project: Crush site (started 2026-10-02)
+
+**Goal:** a cute website where someone asks another person to be their
+crush. Two sides: the **asker** makes a request and gets a link; the
+**crush** opens it and answers yes or no; the asker sees the answer.
+
+**Decisions (user, 2026-10-02):**
+- **Plan: demo first, then a real site.** A clickable demo of all screens
+  is built as a claude.ai artifact to perfect the look. Then it becomes a
+  real website anyone can open, hosted on the user's Synology NAS or a free
+  host.
+- Why not a claude.ai artifact for the live version: shared data in
+  artifacts only works for signed-in claude.ai users given access, and a
+  crush usually won't have that.
+- **Vibe: "Playful game"**: cute characters, a "No" button that runs away,
+  confetti and a happy dance on yes.
+- Kindness rule (Claude's design choice): after a few dodges the No button
+  stops running so the crush can genuinely say no, and the "no" screens
+  stay gentle on both sides.
+
+**Files:** `crush-site/demo.html` (the clickable demo of all three screens).
+Live demo: https://claude.ai/artifact/PqofEdiz8WRLsfNHNou8SL
+
+**Demo contents:** one page with three steps:
+1. **Ask:** your name, their name, an optional note, and a messenger colour
+   (Strawberry, Sunny, Minty, Grape) → "Make my link" → a placeholder link
+   with a Copy button.
+2. **Their page:** a blob "messenger" character (hopeful/happy/sad moods)
+   asks "Will you be [name]'s crush?". The **No** button dodges on hover/tap
+   up to 5 times (teasing lines, Yes grows), then stays still and reads
+   "No, sorry" so they can really decline. Yes → confetti + dance.
+3. **Your answer:** status chips (link made / opened / answer). Yes →
+   celebration; no → a gentle, kind message; none yet → waiting.
+- Fonts Grandstander + Nunito; candy palette (berry #ff3d6e, sun #ffcf3f,
+  mint #4fcfa3, ink #3b1f2b on pink dots). No capabilities; state stays in
+  memory, nothing is sent.
+
+**Status:** demo published. Next: user feedback on the demo, then the
+real site (choose host: NAS vs free host; storage per request with a
+private result link for the asker).
+
+**Note:** this repo is the user's public GitHub profile repo. Don't commit
+real names or answers from people.
+
+---
+
 ## 2. User preferences (apply to all work here)
 - Likes seeing visual demos of options before committing to one.
 - Uses claude.ai cloud sessions and the Claude desktop app, and switches
@@ -232,6 +278,13 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: Built and published the crush site demo
+  (`crush-site/demo.html`). Waiting for user feedback.
+
+- **2026-10-02**: New project: crush site (section 1b). The watch face is
+  paused ("fine as it is for now"); the user still has to send
+  screenshots of how their WFS build differs from the v2 preview.
 
 - **2026-10-02**: The user found the WFS **Radial indicator** option. Synced
   to seconds it doesn't move in Always-On; synced to **Minute in Hour** it
