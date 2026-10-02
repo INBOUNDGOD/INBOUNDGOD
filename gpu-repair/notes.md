@@ -84,7 +84,19 @@ printed on the PCB next to each chip.
   changes the FBIOA1 error count is the one.
 
 ## User's tools (2026-10-02)
-- Hot-air station and "other tools" (details not listed yet).
+- Hot-air station, preheater, flux, kapton tape. **No reballing stencil.**
+  Workaround: buy new chips that ship pre-balled (most AliExpress/eBay
+  listings do), then only pad cleanup (wick + flux) is needed; a GDDR6
+  180-ball 0.75 mm stencil + 0.3 mm balls is only needed to reuse a chip.
+
+## Software / BIOS bypass: asked 2026-10-02, answer: no
+- There is no vBIOS for a GA104-202 that disables a memory partition.
+  NVIDIA disables partitions by on-die fuses (e.g. GA104-150 in the 3060
+  12 GB), not by BIOS. A 3060 BIOS is for a different device ID; nvflash
+  refuses it, and forcing it risks a brick and still wouldn't mask FBIOA1.
+- Only software mitigation worth a try: underclock the memory heavily
+  (MSI Afterburner, −500 to −1000 MHz) and retest. With 205k errors it
+  will probably not be enough, but it's free.
 
 ## Plan agreed in chat (2026-10-02)
 1. Clean the board (IPA), remove the copper debris between M1 and M3.

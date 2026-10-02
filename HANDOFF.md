@@ -351,6 +351,10 @@ clean → verify chip → optional reflow → replace with new H56G32CS4D-X005.
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: GPU: user has preheater, flux, kapton, no stencil. Asked
+  about a BIOS/software bypass of the bad VRAM; told no (fuse-level, not
+  BIOS); only a memory underclock is worth a free try. Notes updated.
+
 - **2026-10-02**: GPU: more photos (back of PCB, chip macro). Part number
   confirmed H56G32CS4D-X005. Debris between M1 and M3 noted. Repair plan
   written in `gpu-repair/notes.md`.
