@@ -13,9 +13,36 @@ _Last updated: 2026-10-02_
 **Goal:** a personal Ben 10 / Omnitrix-themed watch face for the user's
 Samsung Galaxy Watch.
 
-**Status:** user picked **Demo 2, Ultimatrix**, now at **v2** (2026-10-02).
-Waiting on the user to approve v2 before full-size layers and the Watch Face
-Studio build guide are made.
+**Status:** user approved **Ultimatrix v2** and the **build kit is made**
+(2026-10-02): `watch-faces/ultimatrix/` (layers, fonts, previews, SVG
+sources and `WFS-BUILD.md`). Waiting on the user to build it in Watch Face
+Studio, install it on the watch and report back.
+
+### Build kit: `watch-faces/ultimatrix/`
+- `WFS-BUILD.md`: the step-by-step Watch Face Studio guide (layer order,
+  positions, fonts, colours, Always-On set, install, phone battery setup,
+  checklist).
+- `layers/*.png`: full-canvas 450 × 450 images, all placed at X 0, Y 0.
+  `01_background`, `03_bezel_overlay`, `05_phone_icon_label`,
+  `aod_01_static`, `aod_02_seconds_tick`.
+- **Seconds-ring technique:** a WFS circular **progress bar** (r 202,
+  thickness 30, #62E83C, value = seconds, range 0–60, start angle −3°) sits
+  between the background and `03_bezel_overlay.png`. The overlay is the bezel
+  with see-through slots, so the green bar only shows inside slots. The −3°
+  start makes the bar stop between slots.
+- Time, date and battery are WFS text, clock and complication components (not
+  images), in Oxanium (`fonts/`, static Bold and SemiBold cut from Google's
+  variable font with fonttools; OFL licence).
+- In `aod_01_static` the hourglass lines are cut out behind the time box
+  (x 92–358, y 166–262), because WFS text can't have the black halo the demo used.
+- `render-layers.js` regenerates all images (Playwright, run from the folder).
+- **Phone battery:** WFS faces can't read the phone's battery directly. The
+  middle element is a **Short text complication slot**; the user picks a
+  "Phone battery" provider on the watch, installing a phone-battery
+  complication app from the Play Store if needed.
+- **Always-On seconds:** included as a seconds-hand layer for testing.
+  Google and Samsung sources say Always-On only redraws once a minute, so it
+  will probably freeze or be rejected by WFS. The user has been told.
 
 ### Ultimatrix v2 (current design)
 Live preview: https://claude.ai/artifact/ToMBV5b9tmr8zoFQ3WkC7q
@@ -119,13 +146,15 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
   share in AOD, so use outlines rather than filled shapes.
 
 ### Next steps
-1. User picks a design (1, 2, 3, or a mix).
-2. Export full-resolution 450 × 450 layers (PNG with transparency, plus SVG
-   sources) into `watch-faces/<design-name>/assets/`.
-3. Write `watch-faces/<design-name>/WFS-BUILD.md`: layer order, positions,
-   WFS components (digital clock, analog hands, progress/index images,
-   complications), AOD layer set, tap actions.
-4. User builds in WFS, runs on the watch, and reports back. Iterate.
+1. ~~Pick a design~~ (Ultimatrix v2). ~~Make layers and build guide~~ (done).
+2. **User builds in WFS following `watch-faces/ultimatrix/WFS-BUILD.md`,
+   installs with Run on device, and reports back** (photos help): layout,
+   seconds ring, Always-On brightness, whether the Always-On seconds mark
+   moves, whether phone battery shows.
+3. Fix whatever comes back, by editing `render-layers.js`, re-rendering and
+   updating the guide.
+4. Later (user request): when the Forgejo move is done, make a **PDF**
+   covering everything from this project for the user's local Claude.
 
 ### History
 - An earlier attempt happened in Claude Code session
@@ -200,6 +229,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: User approved Ultimatrix v2. Built the kit in
+  `watch-faces/ultimatrix/` (layers, fonts, previews, SVG, `render-layers.js`,
+  `WFS-BUILD.md`). Researched: phone battery needs a complication provider;
+  Always-On seconds likely limited by the OS.
 
 - **2026-10-02**: Brightened Ultimatrix v2's Always-On mode (solid green
   digits, brighter hourglass, rim ring); measured at 9.5% lit.
