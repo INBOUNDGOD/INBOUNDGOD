@@ -13,11 +13,36 @@ _Last updated: 2026-10-02_
 **Goal:** a personal Ben 10 / Omnitrix-themed watch face for the user's
 Samsung Galaxy Watch.
 
-**Status:** user picked **Demo 2, Ultimatrix** (2026-10-02). They want the
-battery and steps readouts replaced with something more useful. Suggested
-replacements were shown in an options demo; waiting on their pick.
+**Status:** user picked **Demo 2, Ultimatrix**, now at **v2** (2026-10-02).
+Waiting on the user to approve v2 before full-size layers and the Watch Face
+Studio build guide are made.
 
-### Ultimatrix readout options (shown 2026-10-02)
+### Ultimatrix v2 (current design)
+Live preview: https://claude.ai/artifact/ToMBV5b9tmr8zoFQ3WkC7q
+Source: `watch-faces/demos/ultimatrix-v2.html`
+
+Wrist up (active):
+- Thick black bezel with 60 seconds segments (lit one per second), four green
+  notches at 45°/135°/225°/315°, inner green rim, dark green radial background.
+- Date (`FRI · OCT 02`) above; big glowing `HH:MM` (y 214, size 88).
+- Bottom row of three readouts (icon, value, label), x = 148 / 225 / 302:
+  - **Left and right:** user-swappable **complications**, defaulting to
+    weather and heart rate. User request: keep them customizable.
+  - **Middle: phone battery %** (user request 2026-10-02), read from the
+    phone through the Galaxy Wearable app. Check that Watch Face Studio
+    offers a phone-battery data source or complication; if it doesn't, tell
+    the user and propose an alternative.
+Always-On (user request 2026-10-02: "everything fades away, leave only the
+ticking and the Ben 10 theme"):
+- **Stays:** time as a green outline, the hourglass outline, the four notches.
+- **Goes:** date, all three readouts, seconds ring, bezel, glow.
+- Wear OS only redraws Always-On once a minute, so seconds can't tick there.
+  The user was told this; the clock counts minutes in Always-On.
+- A black halo behind the digits stops the hourglass lines crossing them.
+- The demo fades over 0.9 s. On the watch, the switch to Always-On is handled
+  by the system.
+
+### Earlier: Ultimatrix readout options (superseded by v2)
 Live preview: https://claude.ai/artifact/7xFk2CoHNcQPC4HA4m9aST
 Source: `watch-faces/demos/ultimatrix-options.html`
 
@@ -163,6 +188,9 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: Built Ultimatrix v2 (phone battery in the middle;
+  Always-On fades to just the clock, hourglass and notches) in
+  `watch-faces/demos/ultimatrix-v2.html` and published it.
 - **2026-10-02**: Built and published the Ultimatrix readout options demo
   (`watch-faces/demos/ultimatrix-options.html`).
 - **2026-10-02**: User picked the Ultimatrix design and asked to replace
