@@ -36,12 +36,40 @@ FBIOD1            0           40            0
 - The 32/40 write errors on all other sub-partitions are a uniform baseline,
   likely a test artefact, not seven more bad chips.
 
-## User's description of the PCB (cooler on)
-- 2 VRAM chips left of the GPU, 3 along the top, 3 on the right.
-- Arrow/marker at the top-left corner of the GPU die.
+## PCB (from the user's bare-board photos, 2026-10-02; copies in `photos/`)
+- Silkscreen next to the GPU: **SP019-U**. A "PG" silkscreen sits beside the
+  barcode sticker (B21OB009 2+00156). No "PG142" text seen; the exact Palit
+  PCB code may be on the back (not photographed yet).
+- GPU: NVIDIA **GA104-202-A1**, date code 2139A1 (SA1HKN.M3P).
+- VRAM: 8 × SK hynix GDDR6, read as **H56G32CS4D X005 130A** (needs
+  confirming under magnification; the correct part number is the shopping
+  list for a replacement). Lot line under it reads like "ATDDH264W23".
+- VRM: 6 phases of ON Semi 3020 power stages along the bracket side (one
+  phase pad looks unpopulated), uP9512 controller (U8001 area), inductors
+  1R0 2134/2136, 4R7 2128. Blue FP5K polymer caps.
+- Power: single 8-pin at top-right. Fan header J15, 4-pin J10.
+
+### Memory chip layout (orientation: bracket/display outputs LEFT, PCIe
+connector at the BOTTOM, 8-pin power top-right)
+```
+            [M2] [M5]           <- above the GPU, toward the 8-pin
+                      [M6]
+   (VRM)    [ GPU ]   [M7]      <- right column
+                      [M8]
+        [M1] [M3] [M4]          <- bottom row, right above the PCIe fingers
+```
+No chips on the bracket side of the GPU. Reference designators M1..M8 are
+printed on the PCB next to each chip.
+
+- **User's belief: FBIOA1 = M1** (bottom-left chip, above the PCIe
+  connector). Basis not yet stated; treat as unverified until a freeze-spray
+  test or the boardview confirms it.
+- Condition seen in photos: white thermal-pad residue around the GPU and
+  memory; old paste on the die; a few small copper/orange specks between M1
+  and M3 along their edges (check and clean before anything else).
 
 ## Which physical chip is FBIOA1?
-- Not established. Needs the PG142/Palit boardview (net names FBPA_A_DQ32..39)
+- The user thinks M1 (see layout). Not yet verified. Needs the PG142/Palit boardview (net names FBPA_A_DQ32..39)
   or a physical test: run MODS and chill one chip at a time with freeze
   spray (or warm it with a heat gun on low); the chip whose cooling/heating
   changes the FBIOA1 error count is the one.

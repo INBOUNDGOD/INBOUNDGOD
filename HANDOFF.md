@@ -274,8 +274,12 @@ chip (same part number, e.g. Samsung K4Z80325BC or Hynix H56C8H24AIR), and
 practice. Diagnose first (MATS/MODS run, rail resistance checks) before
 removing anything.
 
-**Status:** waiting on the user's PCB photos (front, back, chip markings, PCB
-code). Files folder: `gpu-repair/` (`notes.md`).
+**Status:** PCB photos received (front only; shrunk copies in
+`gpu-repair/photos/`, layout map in `gpu-repair/notes.md`). PCB silkscreen
+"SP019-U"; Hynix GDDR6 (part number to confirm). User believes FBIOA1 = chip
+**M1** (bottom-left, above PCIe), unverified. Next: confirm with a
+freeze-spray MODS test, confirm the chip part number, check tools, then plan
+the replacement.
 
 ---
 
@@ -345,6 +349,10 @@ code). Files folder: `gpu-repair/` (`notes.md`).
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: GPU: user sent bare-PCB photos and says they ran MODS
+  themselves; they believe FBIOA1 is chip M1. Saved shrunk photos and the
+  chip layout map in `gpu-repair/`.
 
 - **2026-10-02**: GPU: confirmed Palit (PG142 SKU 20). Saved the MODS excerpt
   and interpretation in `gpu-repair/notes.md`.
