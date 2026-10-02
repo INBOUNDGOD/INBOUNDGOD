@@ -16,7 +16,6 @@ face to the Galaxy Store or Google Play.
 |---|---|
 | `layers/01_background.png` | Everything that never moves: black face, dark bezel, unlit seconds slots, green rim, glowing centre, faint hourglass |
 | `layers/03_bezel_overlay.png` | The bezel again, with **see-through slots**. It goes *above* the seconds bar so the green only shows inside the slots |
-| `layers/05_phone_icon_label.png` | The phone icon and the word PHONE under the battery % |
 | `layers/aod_01_static.png` | Always-On: bright hourglass outline (with a gap behind the time) and thin green rim |
 | `layers/aod_02_seconds_tick.png` | Always-On: one seconds mark pointing to 12, used as a seconds hand |
 | `fonts/Oxanium-Bold.ttf`, `fonts/Oxanium-SemiBold.ttf` | The font (OFL licence in `fonts/OFL.txt`, free to use) |
@@ -109,20 +108,8 @@ Settings confirmed working in WFS on 2026-10-02:
 - If WFS has a **glow** or **shadow** effect, add a soft green one
   (#62E83C). It's optional; the demo had a light glow.
 
-### Layer 6: Phone icon and label
-- **Image** component → `layers/05_phone_icon_label.png`
-- X 0, Y 0, W 450, H 450
-
-### Layer 7: Phone battery (complication slot)
-- **Complication** component, type **Short text**
-- Slot area: X 175, Y 288, W 100, H 30, text **centred** at about (225, 303)
-- Text style: **Oxanium SemiBold**, size **26**, colour **#EFFFF0**
-- Turn **off** the slot's own background, border and icon (the icon is
-  already in Layer 6)
-- **Default data:** if the default list includes **Phone battery**, pick it.
-  Otherwise leave it empty and choose it on the watch later (section 5).
-- Make sure the slot is **editable** (customizable) so you can pick the
-  data on the watch.
+(The phone battery slot and its icon were **removed** at the user's request
+on 2026-10-02. The wrist-up face is just layers 1–5.)
 
 ---
 
@@ -168,33 +155,17 @@ Always-On pixel ratio, it should still be within the limit.
 
 ---
 
-## 5. Set up the phone battery slot
-
-Watch faces made in WFS can't read the phone's battery by themselves. The
-middle slot needs an app that offers a **Phone battery** complication.
-
-1. Touch and hold the face → **Customize** → tap the middle slot.
-2. If **Phone battery** is in the list, pick it. Done.
-3. If not, install a phone-battery complication app on **both phone and
-   watch** from the Play Store (search "phone battery complication"), open
-   it once on the phone, then repeat step 1.
-4. As a fallback, the slot can show the **watch** battery or anything else
-   in the list.
-
----
-
-## 6. Check it
+## 5. Check it
 
 - [ ] The seconds slots light up one by one and reset at the top of the minute
 - [ ] Only the slots glow; no green shows on the solid parts of the bezel
-- [ ] Date, time and battery line up with `preview/preview_active.png`
+- [ ] Date and time line up with `preview/preview_active.png`
 - [ ] Lower your wrist: Always-On shows only the hourglass, rim, time (and
       the seconds mark, if it's allowed)
 - [ ] Always-On is readable but not too bright
 
 Tell Claude what you see (photos help), especially:
-- whether the Always-On seconds mark moves or freezes, and
-- whether the phone battery shows up.
+- whether the Always-On seconds mark moves or freezes.
 
 ---
 

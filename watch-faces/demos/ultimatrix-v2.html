@@ -67,7 +67,7 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
   <header>
     <p class="eyebrow">Ultimatrix v2 · Galaxy Watch4 · 450 × 450</p>
     <h1>Ultimatrix v2</h1>
-    <p class="lead">Just the time, the date and your phone's battery. Flip the switch to see Always-On mode: everything fades away except the clock, the Ultimatrix hourglass and a ticking seconds mark.</p>
+    <p class="lead">Just the time and the date. Flip the switch to see Always-On mode: everything fades away except the clock, the Ultimatrix hourglass and a ticking seconds mark.</p>
   </header>
 
   <div class="stage">
@@ -79,14 +79,10 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
 
     <div class="notes">
       <section>
-        <h2>Phone battery</h2>
-        <p>The only readout. It shows your phone's battery %, which the watch gets from the phone through the Galaxy Wearable app. The value shown is a sample.</p>
-      </section>
-      <section>
         <h2>Always-On mode</h2>
         <ul>
           <li><strong>Stays:</strong> the time in solid green, the hourglass, a thin green rim, and one green seconds mark ticking round the edge.</li>
-          <li><strong>Goes:</strong> the date, the phone battery, the full seconds ring, the bezel and the glow.</li>
+          <li><strong>Goes:</strong> the date, the full seconds ring, the bezel and the glow.</li>
           <li><strong>To test on your watch:</strong> many watch faces only redraw once a minute in Always-On mode. Some still manage ticking seconds, so we'll check this one on your Watch4. If the mark freezes there, I'll tell you the options.</li>
           <li>Brighter than before but still mostly black: about 10% of the screen is lit, under Samsung's guideline of about 15% for Always-On mode.</li>
         </ul>
@@ -107,7 +103,7 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
   var ICONS = {
     phone: '<rect x="4.5" y="1.5" width="9" height="15" rx="2"/><path d="M7.5 14h3"/><path d="M9.8 4.8 7.6 8.6h2.8l-2.2 3.8"/>'
   };
-  var SLOTS = [{ icon: "phone", value: "64%", label: "PHONE", x: 225 }];
+  var SLOTS = [];
 
   function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; }
   function f(n) { return n.toFixed(2); }

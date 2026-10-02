@@ -42,9 +42,6 @@ const LAYERS = {
     `<circle cx="225" cy="225" r="201" fill="none" stroke="url(#ring)" stroke-width="48" mask="url(#holes)"/>`,
     `<linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3033"/><stop offset="1" stop-color="#0b0d0e"/></linearGradient>
      <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450"><rect width="450" height="450" fill="#fff"/>${segments('#000')}</mask>`),
-  '05_phone_icon_label': svg(
-    `<g fill="none" stroke="${GREEN}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(216 262)">${PHONE_ICON}</g>
-     <text x="225" y="325" font-family="Ox" font-weight="600" font-size="10" letter-spacing="2" fill="${GREEN}" text-anchor="middle" dominant-baseline="central">PHONE</text>`),
   // ---- Always-On ----
   'aod_01_static': svg(
     `<g clip-path="url(#notime)"><path d="${hourglass(150, 44)}" fill="none" stroke="${GREEN}" stroke-width="3.5"/></g>
@@ -81,8 +78,7 @@ const img = name => `<image href="layers/${name}.png" width="450" height="450"/>
   const active = svg(
     im('01_background') + litSeconds(41) + im('03_bezel_overlay') +
     T(225, 142, 17, 600, GREEN, 'FRI · OCT 02', 'letter-spacing="3"') +
-    T(225, 214, 88, 700, '#effff0', '10:42', 'letter-spacing="1"') +
-    im('05_phone_icon_label') + T(225, 303, 26, 600, '#effff0', '64%'));
+    T(225, 214, 88, 700, '#effff0', '10:42', 'letter-spacing="1"'));
   const aod = svg('<circle cx="225" cy="225" r="225" fill="#000"/>' + im('aod_01_static') +
     `<g transform="rotate(246 225 225)">${im('aod_02_seconds_tick')}</g>` +
     T(225, 214, 88, 700, '#3fbf28', '10:42', 'letter-spacing="1"'));

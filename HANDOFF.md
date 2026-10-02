@@ -23,8 +23,9 @@ Studio, install it on the watch and report back.
   positions, fonts, colours, Always-On set, install, phone battery setup,
   checklist).
 - `layers/*.png`: full-canvas 450 × 450 images, all placed at X 0, Y 0.
-  `01_background`, `03_bezel_overlay`, `05_phone_icon_label`,
-  `aod_01_static`, `aod_02_seconds_tick`.
+  `01_background`, `03_bezel_overlay`, `aod_01_static`,
+  `aod_02_seconds_tick`. (`05_phone_icon_label` was deleted when the
+  battery was dropped.)
 - **Seconds-ring technique:** a WFS circular **progress bar** (r 202,
   thickness 30, #62E83C, value = seconds, range 0–60, start angle −3°) sits
   between the background and `03_bezel_overlay.png`. The overlay is the bezel
@@ -36,10 +37,9 @@ Studio, install it on the watch and report back.
 - In `aod_01_static` the hourglass lines are cut out behind the time box
   (x 92–358, y 166–262), because WFS text can't have the black halo the demo used.
 - `render-layers.js` regenerates all images (Playwright, run from the folder).
-- **Phone battery:** WFS faces can't read the phone's battery directly. The
-  middle element is a **Short text complication slot**; the user picks a
-  "Phone battery" provider on the watch, installing a phone-battery
-  complication app from the Play Store if needed.
+- **Phone battery: dropped by the user.** For the record: WFS faces can't read
+  the phone battery directly; it would need a complication slot and a
+  phone-battery provider app.
 - **Always-On seconds:** included as a seconds-hand layer for testing.
   Google and Samsung sources say Always-On only redraws once a minute, so it
   will probably freeze or be rejected by WFS. The user has been told.
@@ -52,11 +52,9 @@ Wrist up (active):
 - Thick black bezel with 60 seconds segments (lit one per second), inner
   green rim, dark green radial background, hourglass outline.
 - Date (`FRI · OCT 02`) above; big glowing `HH:MM` (y 214, size 88).
-- **One readout only: phone battery %**, centred below the time (icon,
-  `64%`, label `PHONE`), read from the phone through the Galaxy Wearable app.
-  The user removed the left and right complications (2026-10-02). When
-  building, check that Watch Face Studio offers a phone-battery data source;
-  if it doesn't, tell the user and propose an alternative.
+- **No readouts.** The user removed the left and right complications, then
+  (while building in WFS, 2026-10-02) the phone battery too: "I don't want
+  it anymore". The face is just time, date and the seconds ring.
 - The four diagonal corner notches from earlier demos were **removed**.
   They were decoration only, and the user asked to drop anything that's
   just style.
@@ -229,6 +227,13 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: User dropped the phone battery. Removed it from the WFS
+  build (user deleting the SmallBox complication), from `WFS-BUILD.md`,
+  `render-layers.js` and the previews (`05_phone_icon_label` layer deleted),
+  and from the v2 demo. WFS progress: background, seconds bar, bezel
+  overlay, time (Oxanium-Bold 88) and date (ICU date, default
+  "Wed, Oct 28" format) done. Next: Always-On layers.
 
 - **2026-10-02**: Learned from the user's WFS: fonts must be **installed in
   Windows** (WFS lists system fonts), and font settings are under
