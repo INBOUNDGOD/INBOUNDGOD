@@ -13,8 +13,25 @@ _Last updated: 2026-10-02_
 **Goal:** a personal Ben 10 / Omnitrix-themed watch face for the user's
 Samsung Galaxy Watch.
 
-**Status:** demo stage. Three design demos are built and published. Waiting on
-the user to pick one (or ask for a mix) before full production assets are made.
+**Status:** user picked **Demo 2, Ultimatrix** (2026-10-02). They want the
+battery and steps readouts replaced with something more useful. Suggested
+replacements were shown in an options demo; waiting on their pick.
+
+### Ultimatrix readout options (shown 2026-10-02)
+Live preview: https://claude.ai/artifact/7xFk2CoHNcQPC4HA4m9aST
+Source: `watch-faces/demos/ultimatrix-options.html`
+
+| Option | Left slot | Right slot |
+|---|---|---|
+| A | Weather (temp + condition) | Heart rate (BPM) |
+| B | Next calendar event (time + title) | Sunset time |
+| C | Rain chance | Next alarm |
+
+Recommendation given: build both slots as Watch Face Studio
+**complications**, with the chosen pair as defaults. The user can then swap
+either slot on the watch (touch and hold the face, then Customize) without
+a rebuild. In this layout the time moved up (y 214, size 88) to make room for
+an icon, value and label stack at x 175 and x 275.
 
 ### Target device
 | Item | Value |
@@ -123,7 +140,10 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
   GitHub only. Once GitHub is gone, continue this project with Claude Code
   running locally (PC or NAS) against the Forgejo remote. `HANDOFF.md` and
   `CLAUDE.md` travel with the repo, so the handoff system keeps working.
-- **Status:** steps given to the user. Not yet done. Recommended merging PR #1
+- **Status: on hold (user, 2026-10-02).** Keep working on GitHub for now.
+  When the move is done, make a **PDF** with all the info and instructions
+  from this project, so the user can hand it to Claude Code running locally.
+- Steps already given to the user. Not yet done. Recommended merging PR #1
   into `main` first so `main` holds all the work before migrating. Recommended
   archiving the GitHub repos (reversible) and deleting them only after the
   Forgejo copies are checked.
@@ -142,6 +162,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: Built and published the Ultimatrix readout options demo
+  (`watch-faces/demos/ultimatrix-options.html`).
+- **2026-10-02**: User picked the Ultimatrix design and asked to replace
+  battery and steps. The Forgejo move is on hold; make a PDF handoff guide later.
 
 - **2026-10-02**: User decided to move all repos off GitHub to Forgejo on
   their NAS. Added section 3 with the plan and its consequences.
