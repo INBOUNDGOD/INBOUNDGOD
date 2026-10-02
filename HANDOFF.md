@@ -4,7 +4,7 @@ The single source of truth for picking up this project mid-stream. Any Claude
 session (any model) that opens this repo should read this file first, then
 keep it current. See `CLAUDE.md` for the update rules.
 
-_Last updated: 2026-10-01_
+_Last updated: 2026-10-02_
 
 ---
 
@@ -105,7 +105,32 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ---
 
-## 3. Environment notes (cloud container)
+## 3. Moving off GitHub to Forgejo on the NAS (decided 2026-10-02)
+- **Decision:** the user wants all their GitHub repos moved to their own
+  **Forgejo** server on their Synology NAS, and GitHub dropped entirely
+  ("Move off GitHub entirely" was chosen over mirroring).
+- **Repos to move:** `INBOUNDGOD/INBOUNDGOD` (this project; it's
+  **public** on GitHub) and `INBOUNDGOD/claude-phone-` (private, README only).
+- **Where Forgejo details live:** the user says their Forgejo setup
+  instructions (URL, access) are in a `CLAUDE.md` on their own machine or NAS.
+  It's not in either GitHub repo, so cloud sessions can't see it. Ask
+  the user or read it from a local session.
+- **How (recommended):** use Forgejo's own **New Migration → GitHub** import,
+  run from the NAS. It copies full history (plus PRs, issues and releases if
+  ticked) using a GitHub token. It needs no cloud-to-NAS access and no NAS
+  passwords in the cloud.
+- **Consequence:** Claude Code cloud sessions (claude.ai/code) clone from
+  GitHub only. Once GitHub is gone, continue this project with Claude Code
+  running locally (PC or NAS) against the Forgejo remote. `HANDOFF.md` and
+  `CLAUDE.md` travel with the repo, so the handoff system keeps working.
+- **Status:** steps given to the user. Not yet done. Recommended merging PR #1
+  into `main` first so `main` holds all the work before migrating. Recommended
+  archiving the GitHub repos (reversible) and deleting them only after the
+  Forgejo copies are checked.
+
+---
+
+## 4. Environment notes (cloud container)
 - The container is temporary. Anything not committed **and pushed** is lost.
 - Blocked: `dl.google.com` (no Android SDK, no Google Maven).
 - Available: Java, Gradle, Node, Playwright with Chromium (useful for
@@ -115,8 +140,11 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 
 ---
 
-## 4. Change log
+## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: User decided to move all repos off GitHub to Forgejo on
+  their NAS. Added section 3 with the plan and its consequences.
 
 - **2026-10-01**: Noted that this is the user's GitHub profile repo (a root
   `README.md` would appear on their public profile). PR #1 status: no CI
