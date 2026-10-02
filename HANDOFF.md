@@ -13,7 +13,17 @@ _Last updated: 2026-10-02_
 **Goal:** a personal Ben 10 / Omnitrix-themed watch face for the user's
 Samsung Galaxy Watch.
 
-**Status:** user approved **Ultimatrix v2** and the **build kit is made**
+**Status (2026-10-02, later):** WFS build complete on the user's PC
+(background, seconds bar, overlay, time, date; Always-On static + green time
++ minute marker). **Install to the watch: attempted, result unknown.** Run on
+Device didn't connect at first; the user was walked through Developer
+options, Wireless debugging, adb pair/connect and WFS's own "Add device"
+dialog (IP 192.168.0.20, pairing port 34365 at the time). The user then moved
+on to other projects without saying whether it worked. Also still open: the
+user said their WFS build "looks nothing like the v2 preview" but never sent
+the comparison screenshots.
+
+Earlier status: user approved **Ultimatrix v2** and the **build kit is made**
 (2026-10-02): `watch-faces/ultimatrix/` (layers, fonts, previews, SVG
 sources and `WFS-BUILD.md`). Waiting on the user to build it in Watch Face
 Studio, install it on the watch and report back.
@@ -217,6 +227,51 @@ real names or answers from people.
 
 ---
 
+## 1c. Active project: RTX 3060 Ti repair (started 2026-10-02)
+
+**Goal:** the user's "RTX3060TI DUAL OC 8GB 256BIT 3 DP HDMI V1" artifacts
+heavily and the NVIDIA driver never installs properly. They suspect VRAM chip
+"A1" and want the board schematic/boardview to attempt a repair.
+
+**Not yet known: which brand.** The name is ambiguous. "Dual OC … V1" matches
+the **Palit GeForce RTX 3060 Ti Dual OC V1** exactly, but ASUS also sells a
+**Dual RTX 3060 Ti OC (DUAL-RTX3060TI-O8G)**. A ChatGPT chat the user shared
+(https://chatgpt.com/share/6abfcd1d-9f40-83e9-a013-eb39fd9ce8ad) assumed ASUS.
+Photos of the bare PCB (user promised) settle it: the PCB code is printed on
+the board (ASUS: CG190P / CG190PI / CG142S; Palit/Gainward: a V-number).
+
+**Files found (2026-10-02):**
+- elvikom.pl thread "Schemat Asus RTX3060TI-8G MINI CG190P" (free after forum
+  registration): boardviews (*.cad) for ASUS RTX3060TI-8G MINI CG190P r1.00
+  and DUAL-RTX3060TI-8G-MINI-I3S CG190P_HYN r1.00.
+  https://www.elvikom.pl/schemat-asus-rtx3060ti-8g-mini-cg190p-t73599.html?lang=en
+- badcaps.net thread 3474108 (premium download): Asus_TUF_RTX3060TI_O8G_GAMING
+  .fz + .pdf, ASUS CG142S schematic PDF + boardview PDF, Gigabyte PG190-A02
+  PDF, and V397_10/20/40/50/51/60/61/70 .cad boardviews.
+- pkbiosfix.com thread 10444 (VIP): the same file set.
+- realschematic.com: paid ASUS TUF CG190PI and CG142S packs.
+- A YouTube video claims a free download of the TUF CG190PI schematic+boardview
+  (https://www.youtube.com/watch?v=58wiEcPtYJU); not verified.
+- No file was downloaded into the repo (paywalled/registration; not needed
+  until the board is identified).
+
+**How "A1" maps to a chip:** NVIDIA MATS/MODS reports memory by partition
+(FBPA A–D) and sub-partition (0/1): A0, A1, B0, B1, C0, C1, D0, D1 = the 8
+GDDR6 chips on a 256-bit card. The physical position of each is board-specific;
+the boardview's net names (FBPA…) give the mapping. Don't guess from another
+board.
+
+**Repair reality (told to the user):** replacing GDDR6 needs a BGA rework
+station (hot air/IR + preheater), a reballing stencil, a matching replacement
+chip (same part number, e.g. Samsung K4Z80325BC or Hynix H56C8H24AIR), and
+practice. Diagnose first (MATS/MODS run, rail resistance checks) before
+removing anything.
+
+**Status:** waiting on the user's PCB photos (front, back, chip markings, PCB
+code). Files folder: `gpu-repair/` (empty so far).
+
+---
+
 ## 2. User preferences (apply to all work here)
 - Likes seeing visual demos of options before committing to one.
 - Uses claude.ai cloud sessions and the Claude desktop app, and switches
@@ -283,6 +338,11 @@ real names or answers from people.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: New project 1c: RTX 3060 Ti repair. Researched schematic
+  and boardview sources; brand (ASUS vs Palit) still unconfirmed. Watch:
+  recorded install attempt as result unknown. Session model switched to
+  Fable 5.1 by the user; handoff continued without issue.
 
 - **2026-10-02**: Crush demo: removed the demo label and footnote; made the
   character follow the cursor, draggable and pokeable.
