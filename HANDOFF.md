@@ -351,6 +351,13 @@ clean → verify chip → optional reflow → replace with new H56G32CS4D-X005.
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: User asked for a downloadable handoff to continue with a
+  local model. Made `HANDOFF-bundle.pdf` (HANDOFF.md + GPU notes + annotated
+  photos + WFS guide + CLAUDE.md, rendered with Playwright) and a zip of the
+  whole repo (not committed; sent in chat). Regenerate the PDF with the
+  script in the chat history or by re-rendering the markdown; it is a
+  snapshot and goes stale as HANDOFF.md changes.
+
 - **2026-10-02**: GPU: gave MODS download steps (levirepair image) and
   multimeter test points; made annotated front/back photos in
   `gpu-repair/photos/annotated-*.jpg`. Waiting on readings and the MODS run.
