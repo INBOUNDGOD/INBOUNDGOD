@@ -230,6 +230,12 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: In WFS, the user has the background, seconds progress bar
+  and bezel overlay in, and the seconds slots tick correctly in WFS's
+  preview. Recorded the exact working progress-bar settings in
+  `WFS-BUILD.md` (Range uses Start 357 and Angular distance 360; the preset
+  icons break it). Next: time, date, phone icon, battery slot.
+
 - **2026-10-02**: User started in WFS (screenshot: empty Circle project
   "ultimatrix", "No layers"). Their WFS version has no digital/analog
   template choice, so `WFS-BUILD.md` section 1 was corrected. Walked them

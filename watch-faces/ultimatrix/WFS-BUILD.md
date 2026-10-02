@@ -66,17 +66,18 @@ list is the front**, so the last one added should end up highest.
 - X 0, Y 0, W 450, H 450
 
 ### Layer 2: Seconds bar (lights one slot per second)
-- **Progress bar** component, **circular**
-- Centre (225, 225), **radius 202**, **thickness 30**
-- Colour **#62E83C**, no background track (or track fully transparent)
-- **Value: seconds.** Pick seconds from the tag/data picker.
-- Range **0 to 60**
-- **Start angle −3° (357°)**, going clockwise for the full circle. The half-slot
-  offset makes the bar stop *between* slots, not halfway through one.
-- Optional: if the value field takes an expression, use *seconds + 1* so the
-  12 o'clock slot is already lit at :00, like the demo.
-- Don't worry that it looks like a solid green ring in the editor. The next
-  layer covers everything except the slots.
+Settings confirmed working in WFS on 2026-10-02:
+- **Progress bar** component, Type **Circular progress bar**
+- Placement **X 8, Y 8**; Dimension **W 434, H 434**
+- Rotate **Angle 0**
+- Colour **#62e83c** at 100%; **Background slider 0%** (hides the grey track)
+- Cap style: **first (flat)** option; **Thickness 30**
+- Range setting: **Value `[SEC]`** (seconds tag), **Min 0, Max 60**
+- Range: **Start 357, Angular distance 360, Direction Clockwise**. Don't
+  click the range preset icons; they turn it into a part circle and move
+  the box. The 357 start makes the bar stop between slots, not halfway
+  through one.
+- In the editor it looks like a solid green ring until Layer 3 covers it.
 
 ### Layer 3: Bezel overlay
 - **Image** component → `layers/03_bezel_overlay.png`
