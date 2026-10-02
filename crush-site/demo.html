@@ -32,7 +32,6 @@ body {
 .wrap { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 48px; display: grid; gap: 18px; }
 
 .demo-bar { display: grid; gap: 10px; justify-items: center; text-align: center; }
-.demo-tag { font: 800 11px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--berry-deep); background: var(--card); border: 2px dashed var(--line); border-radius: 999px; padding: 3px 12px; margin: 0; }
 .steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .steps button { font: 800 14px var(--body); color: var(--ink-soft); background: transparent; border: 2px solid transparent; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
 .steps button[aria-current="true"] { color: var(--ink); background: var(--card); border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
@@ -48,7 +47,13 @@ body {
 .card p { margin: 0; color: var(--ink-soft); max-width: 36ch; }
 .kicker { font: 800 13px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--berry-deep); }
 
-.char { width: 150px; height: 150px; }
+.char { position: relative; width: 150px; height: 150px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; z-index: 2; }
+.char.held { cursor: grabbing; }
+.char .squish { transform-origin: 50% 95%; }
+.char.poked .squish { animation: squish .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes squish { 0% { transform: scale(1,1); } 30% { transform: scale(1.18,.82); } 60% { transform: scale(.92,1.1); } 100% { transform: scale(1,1); } }
+.pop { position: absolute; left: 50%; top: 10%; width: 26px; height: 26px; margin-left: -13px; pointer-events: none; animation: pop 1s ease-out forwards; }
+@keyframes pop { from { transform: translate(0,0) scale(.4); opacity: 1; } to { transform: translate(var(--dx, 0px), -70px) scale(1.2); opacity: 0; } }
 .char svg { width: 100%; height: 100%; overflow: visible; }
 .bob { animation: bob 1.8s ease-in-out infinite; transform-origin: 50% 90%; }
 .dance { animation: dance .5s ease-in-out infinite alternate; transform-origin: 50% 90%; }
@@ -94,10 +99,10 @@ body {
 .pulse { animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 
-.fineprint { font-size: 13px; color: var(--ink-soft); text-align: center; margin: 0; }
 #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 @media (prefers-reduced-motion: reduce) {
-  .bob, .dance, .droop, .eye, .pulse { animation: none; }
+  .bob, .dance, .droop, .eye, .pulse, .char.poked .squish, .pop { animation: none; }
+  .pop { display: none; }
   #yesBtn, #noBtn { transition: none; }
 }
 </style>
@@ -105,7 +110,6 @@ body {
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div class="wrap">
   <div class="demo-bar">
-    <p class="demo-tag">Demo · nothing is sent anywhere</p>
     <nav class="steps" aria-label="Demo screens">
       <button type="button" data-go="ask" aria-current="true">1 · Ask</button>
       <button type="button" data-go="crush" aria-current="false">2 · Their page</button>
@@ -116,6 +120,7 @@ body {
   <!-- 1. Asker makes the request -->
   <section class="card" id="view-ask" aria-labelledby="askTitle">
     <div class="char" id="askChar"></div>
+    <p class="hint" style="margin-top:-8px">Psst, you can poke me or drag me around.</p>
     <h1 id="askTitle">Ask your crush</h1>
     <p>Fill this in and you'll get a secret link to send them. Only you can see their answer.</p>
     <form class="form" id="askForm" novalidate>
@@ -165,7 +170,6 @@ body {
     <button class="btn small" type="button" id="restart">Start over</button>
   </section>
 
-  <p class="fineprint">Demo of the asking page, their page and your answer page. In the real site each request gets its own private links.</p>
 </div>
 
 <script>
@@ -184,26 +188,26 @@ body {
     var col = COLOURS[c];
     var eyes, mouth, extra = "";
     if (mood === "happy") {
-      eyes = '<path d="M44 58 q6-8 12 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M74 58 q6-8 12 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/>';
+      eyes = '<g class="look"><path d="M44 58 q6-8 12 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M74 58 q6-8 12 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/></g>';
       mouth = '<path d="M52 72 q13 16 26 0 z" fill="#3b1f2b"/><path d="M58 78 q7 5 14 0" fill="#ff5a7a"/>';
       extra = '<g fill="#ff3d6e"><path d="M10 30 c-4-6 4-10 6-4 c2-6 10-2 6 4 l-6 7 z"/><path d="M112 22 c-3-5 3-8 5-3 c2-5 8-2 5 3 l-5 6 z"/></g>';
     } else if (mood === "sad") {
-      eyes = '<ellipse cx="50" cy="58" rx="5" ry="6" fill="#3b1f2b"/><ellipse cx="80" cy="58" rx="5" ry="6" fill="#3b1f2b"/>';
+      eyes = '<g class="look"><ellipse cx="50" cy="58" rx="5" ry="6" fill="#3b1f2b"/><ellipse cx="80" cy="58" rx="5" ry="6" fill="#3b1f2b"/></g>';
       mouth = '<path d="M56 80 q9-7 18 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/>';
       extra = '<path d="M86 66 q3 7 0 10 q-3-3 0-10z" fill="#7fd0ff"/>';
     } else {
-      eyes = '<g class="eye"><ellipse cx="50" cy="58" rx="6" ry="8" fill="#3b1f2b"/><circle cx="52" cy="55" r="2" fill="#fff"/></g><g class="eye"><ellipse cx="80" cy="58" rx="6" ry="8" fill="#3b1f2b"/><circle cx="82" cy="55" r="2" fill="#fff"/></g>';
+      eyes = '<g class="look"><g class="eye"><ellipse cx="50" cy="58" rx="6" ry="8" fill="#3b1f2b"/><circle cx="52" cy="55" r="2" fill="#fff"/></g><g class="eye"><ellipse cx="80" cy="58" rx="6" ry="8" fill="#3b1f2b"/><circle cx="82" cy="55" r="2" fill="#fff"/></g></g>';
       mouth = '<path d="M58 74 q7 7 14 0" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/>';
     }
     var anim = mood === "happy" ? "dance" : mood === "sad" ? "droop" : "bob";
-    return '<svg viewBox="0 0 130 140" aria-hidden="true"><g class="' + anim + '">' +
+    return '<svg viewBox="0 0 130 140" aria-hidden="true"><g class="squish"><g class="' + anim + '">' +
       '<ellipse cx="65" cy="132" rx="38" ry="6" fill="#3b1f2b" opacity=".12"/>' +
       '<path d="M24 120 q-6-46 16-80 q25-34 50 0 q22 34 16 80 q-41 10-82 0z" fill="' + col.body + '" stroke="#3b1f2b" stroke-width="4"/>' +
       '<path d="M58 22 q-4-12 6-14" stroke="#3b1f2b" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="66" cy="8" r="5" fill="' + col.dark + '" stroke="#3b1f2b" stroke-width="3"/>' +
       eyes + mouth +
       '<ellipse cx="38" cy="70" rx="7" ry="4" fill="#ff5a7a" opacity=".55"/><ellipse cx="92" cy="70" rx="7" ry="4" fill="#ff5a7a" opacity=".55"/>' +
       '<path d="M48 104 c-6-8 4-14 8-6 c4-8 14-2 8 6 l-8 9 z" fill="#ff3d6e" stroke="#3b1f2b" stroke-width="3" stroke-linejoin="round"/>' +
-      extra + "</g></svg>";
+      extra + "</g></g></svg>";
   }
 
   // ---------- views ----------
@@ -373,6 +377,70 @@ body {
     raf = parts.length ? requestAnimationFrame(step) : 0;
     if (!raf) ctx.clearRect(0, 0, cv.width, cv.height);
   }
+
+  // ---------- interactive messenger: follow, drag, poke ----------
+  var HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#ff3d6e" stroke="#3b1f2b" stroke-width="2"/></svg>';
+  var pointer = null, buddies = [];
+  window.addEventListener("pointermove", function (e) { pointer = { x: e.clientX, y: e.clientY }; }, { passive: true });
+  function clamp(v, m) { return Math.max(-m, Math.min(m, v)); }
+  function buddy(el) {
+    var b = { el: el, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, drag: false, moved: false, sx: 0, sy: 0, ox: 0, oy: 0 };
+    el.addEventListener("pointerdown", function (e) {
+      b.drag = true; b.moved = false; b.sx = e.clientX; b.sy = e.clientY; b.ox = b.x; b.oy = b.y;
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      el.classList.add("held");
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (!b.drag) return;
+      var dx = e.clientX - b.sx, dy = e.clientY - b.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 6) b.moved = true;
+      b.tx = clamp(b.ox + dx, 140); b.ty = clamp(b.oy + dy, 120);
+    });
+    function release() {
+      if (!b.drag) return;
+      b.drag = false; el.classList.remove("held");
+      if (!b.moved) poke(b);
+    }
+    el.addEventListener("pointerup", release);
+    el.addEventListener("pointercancel", release);
+    buddies.push(b);
+  }
+  function poke(b) {
+    b.el.classList.remove("poked"); void b.el.offsetWidth; b.el.classList.add("poked");
+    if (reduceMotion) return;
+    var h = document.createElement("span");
+    h.className = "pop"; h.innerHTML = HEART;
+    h.style.setProperty("--dx", (Math.random() * 60 - 30).toFixed(0) + "px");
+    b.el.appendChild(h);
+    setTimeout(function () { h.remove(); }, 1000);
+    b.vy -= 6; // little hop
+  }
+  function tick() {
+    buddies.forEach(function (b) {
+      if (!b.el.offsetParent) return; // hidden screen
+      var r = b.el.getBoundingClientRect();
+      var hx = r.left + r.width / 2 - b.x, hy = r.top + r.height / 2 - b.y; // home centre
+      var lookX = 0, lookY = 0;
+      if (pointer) {
+        var dx = pointer.x - hx, dy = pointer.y - hy, d = Math.hypot(dx, dy) || 1;
+        lookX = dx / d; lookY = dy / d;
+        if (!b.drag) {
+          var pull = reduceMotion ? 0 : Math.min(d, 320) / 320 * 34; // drift a little toward the cursor
+          b.tx = lookX * pull; b.ty = lookY * pull * 0.6;
+        }
+      } else if (!b.drag) { b.tx = 0; b.ty = 0; }
+      var k = b.drag ? 0.3 : 0.035; // dragging is snappy, following is slow and floaty
+      b.vx = (b.vx + (b.tx - b.x) * k) * (b.drag ? 0.6 : 0.88);
+      b.vy = (b.vy + (b.ty - b.y) * k) * (b.drag ? 0.6 : 0.88);
+      b.x += b.vx; b.y += b.vy;
+      b.el.style.transform = "translate(" + b.x.toFixed(1) + "px," + b.y.toFixed(1) + "px) rotate(" + clamp(b.vx * 1.6, 14).toFixed(1) + "deg)";
+      var look = b.el.querySelector(".look");
+      if (look) look.setAttribute("transform", "translate(" + (lookX * 3.5).toFixed(1) + " " + (lookY * 3).toFixed(1) + ")");
+    });
+    requestAnimationFrame(tick);
+  }
+  ["askChar", "crushChar", "resultChar"].forEach(function (id) { buddy(document.getElementById(id)); });
+  requestAnimationFrame(tick);
 
   renderAsk();
 })();

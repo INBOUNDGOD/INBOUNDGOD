@@ -199,6 +199,11 @@ Live demo: https://claude.ai/artifact/PqofEdiz8WRLsfNHNou8SL
    "No, sorry" so they can really decline. Yes → confetti + dance.
 3. **Your answer:** status chips (link made / opened / answer). Yes →
    celebration; no → a gentle, kind message; none yet → waiting.
+- The messenger character is **interactive** (user request): it slowly
+  drifts toward the cursor and its eyes follow it; it can be dragged and
+  springs back on release; a click/tap squishes it and pops a heart. The
+  "Demo" label and the demo footnote were removed (user request); the step
+  tabs stay so the demo can be navigated.
 - Fonts Grandstander + Nunito; candy palette (berry #ff3d6e, sun #ffcf3f,
   mint #4fcfa3, ink #3b1f2b on pink dots). No capabilities; state stays in
   memory, nothing is sent.
@@ -278,6 +283,9 @@ real names or answers from people.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-02**: Crush demo: removed the demo label and footnote; made the
+  character follow the cursor, draggable and pokeable.
 
 - **2026-10-02**: Built and published the crush site demo
   (`crush-site/demo.html`). Waiting for user feedback.
