@@ -36,8 +36,15 @@ Wrist up (active):
 
 Always-On (user request 2026-10-02: "everything fades away, leave only the
 ticking and the Ben 10 theme"):
-- **Stays:** time as a green outline, hourglass outline, and **one green
-  seconds mark ticking round the edge**.
+- **Stays:** time in **solid green** (`#3fbf28`, light-green edge
+  `#b8ff9a`), bright hourglass outline (`#62e83c`, 3.5 px, no fill), a thin
+  dim-green rim ring (r 175, `#2f8f22`, 2 px) and **one bright seconds mark
+  ticking round the edge** (`#9dff6e`).
+- **Brightness (user request 2026-10-02):** the first Always-On version
+  looked too dim, close to a blank black screen. It was brightened and
+  measured at about **9.5% lit pixels**, under Samsung's guideline of about
+  15%. Filling the hourglass pushed it to 27%, so the hourglass stays
+  outline-only.
 - **Goes:** date, phone battery, full seconds ring, bezel, glow.
 - **Open question: seconds in Always-On.** Wear OS docs and user reports say
   most faces only redraw once a minute in Always-On. Some faces have still
@@ -194,6 +201,8 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: Brightened Ultimatrix v2's Always-On mode (solid green
+  digits, brighter hourglass, rim ring); measured at 9.5% lit.
 - **2026-10-02**: Ultimatrix v2 updated (same artifact URL, version 2):
   side readouts removed (phone battery only), decorative corner notches
   removed, ticking seconds mark added to Always-On.

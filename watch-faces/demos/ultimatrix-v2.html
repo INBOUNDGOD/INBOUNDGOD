@@ -49,7 +49,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 
 
 /* Face: everything in .active fades out in Always-On; .theme and .clock stay */
 svg .active { transition: opacity var(--fade) ease; }
-svg .hg { transition: fill-opacity var(--fade) ease, stroke-opacity var(--fade) ease, stroke var(--fade) ease; fill: #62e83c; fill-opacity: .07; stroke: #62e83c; stroke-opacity: .45; }
+svg .hg { transition: fill-opacity var(--fade) ease, stroke-opacity var(--fade) ease, stroke var(--fade) ease, stroke-width var(--fade) ease; fill: #62e83c; fill-opacity: .07; stroke: #62e83c; stroke-opacity: .45; }
 svg .time { transition: fill var(--fade) ease, stroke-width var(--fade) ease; fill: #effff0; stroke: #62e83c; stroke-width: 0; }
 svg .glow { transition: opacity var(--fade) ease; }
 svg .aodsec { transition: opacity var(--fade) ease; opacity: 0; }
@@ -58,8 +58,8 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
 .aod svg .knock { opacity: 1; }
 .aod svg .active { opacity: 0; }
 .aod svg .glow { opacity: 0; }
-.aod svg .hg { fill-opacity: 0; stroke: #3cb82a; stroke-opacity: .9; }
-.aod svg .time { fill: #000; stroke-width: 2; }
+.aod svg .hg { fill-opacity: 0; stroke: #62e83c; stroke-opacity: 1; stroke-width: 3.5; }
+.aod svg .time { fill: #3fbf28; stroke: #b8ff9a; stroke-width: 1.5; }
 @media (prefers-reduced-motion: reduce) { :root { --fade: 0ms; } }
 </style>
 
@@ -85,10 +85,10 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
       <section>
         <h2>Always-On mode</h2>
         <ul>
-          <li><strong>Stays:</strong> the time (as a green outline), the hourglass, and one green seconds mark ticking round the edge.</li>
+          <li><strong>Stays:</strong> the time in solid green, the hourglass, a thin green rim, and one green seconds mark ticking round the edge.</li>
           <li><strong>Goes:</strong> the date, the phone battery, the full seconds ring, the bezel and the glow.</li>
           <li><strong>To test on your watch:</strong> many watch faces only redraw once a minute in Always-On mode. Some still manage ticking seconds, so we'll check this one on your Watch4. If the mark freezes there, I'll tell you the options.</li>
-          <li>Only one small mark is lit, so the screen stays almost black, which saves battery.</li>
+          <li>Brighter than before but still mostly black: about 10% of the screen is lit, under Samsung's guideline of about 15% for Always-On mode.</li>
         </ul>
       </section>
       <section>
@@ -139,7 +139,8 @@ svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
   s += '<path class="hg" d="' + hourglass(150, 44) + '" stroke-width="3"/>';
 
   // Always-On only: one seconds mark ticking round the edge
-  s += '<rect class="aodsec" id="aodsec" x="222" y="12" width="6" height="21" rx="1.5" fill="' + GREEN + '"/>';
+  s += '<circle class="aodsec" cx="225" cy="225" r="175" fill="none" stroke="#2f8f22" stroke-width="2"/>';
+  s += '<rect class="aodsec" id="aodsec" x="221" y="10" width="8" height="26" rx="1.5" fill="#9dff6e"/>';
 
   // Clock: always shown (glow only when wrist is up; black halo keeps the hourglass lines off the digits in Always-On)
   s += '<text class="knock time-copy" x="225" y="214" font-family="Oxanium, sans-serif" font-size="88" font-weight="700" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" letter-spacing="1" text-anchor="middle" dominant-baseline="central"></text>';
