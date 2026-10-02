@@ -22,22 +22,28 @@ Live preview: https://claude.ai/artifact/ToMBV5b9tmr8zoFQ3WkC7q
 Source: `watch-faces/demos/ultimatrix-v2.html`
 
 Wrist up (active):
-- Thick black bezel with 60 seconds segments (lit one per second), four green
-  notches at 45°/135°/225°/315°, inner green rim, dark green radial background.
+- Thick black bezel with 60 seconds segments (lit one per second), inner
+  green rim, dark green radial background, hourglass outline.
 - Date (`FRI · OCT 02`) above; big glowing `HH:MM` (y 214, size 88).
-- Bottom row of three readouts (icon, value, label), x = 148 / 225 / 302:
-  - **Left and right:** user-swappable **complications**, defaulting to
-    weather and heart rate. User request: keep them customizable.
-  - **Middle: phone battery %** (user request 2026-10-02), read from the
-    phone through the Galaxy Wearable app. Check that Watch Face Studio
-    offers a phone-battery data source or complication; if it doesn't, tell
-    the user and propose an alternative.
+- **One readout only: phone battery %**, centred below the time (icon,
+  `64%`, label `PHONE`), read from the phone through the Galaxy Wearable app.
+  The user removed the left and right complications (2026-10-02). When
+  building, check that Watch Face Studio offers a phone-battery data source;
+  if it doesn't, tell the user and propose an alternative.
+- The four diagonal corner notches from earlier demos were **removed**.
+  They were decoration only, and the user asked to drop anything that's
+  just style.
+
 Always-On (user request 2026-10-02: "everything fades away, leave only the
 ticking and the Ben 10 theme"):
-- **Stays:** time as a green outline, the hourglass outline, the four notches.
-- **Goes:** date, all three readouts, seconds ring, bezel, glow.
-- Wear OS only redraws Always-On once a minute, so seconds can't tick there.
-  The user was told this; the clock counts minutes in Always-On.
+- **Stays:** time as a green outline, hourglass outline, and **one green
+  seconds mark ticking round the edge**.
+- **Goes:** date, phone battery, full seconds ring, bezel, glow.
+- **Open question: seconds in Always-On.** Wear OS docs and user reports say
+  most faces only redraw once a minute in Always-On. Some faces have still
+  shown ticking seconds, and the user says a Ben 10 skin they made before
+  kept updating. Plan: build it with the seconds mark and test on the
+  Watch4. If it freezes, tell the user and offer options.
 - A black halo behind the digits stops the hourglass lines crossing them.
 - The demo fades over 0.9 s. On the watch, the switch to Always-On is handled
   by the system.
@@ -188,6 +194,9 @@ Key geometry (clock degrees, 0 = 12 o'clock, clockwise, centre 225,225):
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-02**: Ultimatrix v2 updated (same artifact URL, version 2):
+  side readouts removed (phone battery only), decorative corner notches
+  removed, ticking seconds mark added to Always-On.
 - **2026-10-02**: Built Ultimatrix v2 (phone battery in the middle;
   Always-On fades to just the clock, hourglass and notches) in
   `watch-faces/demos/ultimatrix-v2.html` and published it.

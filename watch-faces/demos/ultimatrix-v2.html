@@ -52,14 +52,14 @@ svg .active { transition: opacity var(--fade) ease; }
 svg .hg { transition: fill-opacity var(--fade) ease, stroke-opacity var(--fade) ease, stroke var(--fade) ease; fill: #62e83c; fill-opacity: .07; stroke: #62e83c; stroke-opacity: .45; }
 svg .time { transition: fill var(--fade) ease, stroke-width var(--fade) ease; fill: #effff0; stroke: #62e83c; stroke-width: 0; }
 svg .glow { transition: opacity var(--fade) ease; }
+svg .aodsec { transition: opacity var(--fade) ease; opacity: 0; }
+.aod svg .aodsec { opacity: 1; }
 svg .knock { transition: opacity var(--fade) ease; opacity: 0; }
 .aod svg .knock { opacity: 1; }
-svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
 .aod svg .active { opacity: 0; }
 .aod svg .glow { opacity: 0; }
 .aod svg .hg { fill-opacity: 0; stroke: #3cb82a; stroke-opacity: .9; }
 .aod svg .time { fill: #000; stroke-width: 2; }
-.aod svg .notch { fill: #2f8f22; }
 @media (prefers-reduced-motion: reduce) { :root { --fade: 0ms; } }
 </style>
 
@@ -67,7 +67,7 @@ svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
   <header>
     <p class="eyebrow">Ultimatrix v2 · Galaxy Watch4 · 450 × 450</p>
     <h1>Ultimatrix v2</h1>
-    <p class="lead">Phone battery now sits in the middle, between the two customizable slots. Flip the switch to see Always-On mode: everything fades away except the clock and the Ultimatrix hourglass.</p>
+    <p class="lead">Just the time, the date and your phone's battery. Flip the switch to see Always-On mode: everything fades away except the clock, the Ultimatrix hourglass and a ticking seconds mark.</p>
   </header>
 
   <div class="stage">
@@ -79,19 +79,16 @@ svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
 
     <div class="notes">
       <section>
-        <h2>Bottom row</h2>
-        <ul>
-          <li><strong>Left and right:</strong> customizable slots (Samsung calls them complications). They default to weather and heart rate here. Change either on the watch: touch and hold the face, then Customize.</li>
-          <li><strong>Middle:</strong> your phone's battery %, read from the phone through the Galaxy Wearable app. The value shown is a sample.</li>
-        </ul>
+        <h2>Phone battery</h2>
+        <p>The only readout. It shows your phone's battery %, which the watch gets from the phone through the Galaxy Wearable app. The value shown is a sample.</p>
       </section>
       <section>
         <h2>Always-On mode</h2>
         <ul>
-          <li><strong>Stays:</strong> the time (as a green outline), the hourglass, and four small Ultimatrix notches at the edge.</li>
-          <li><strong>Goes:</strong> the date, all three readouts, the seconds ring, the bezel and the glow.</li>
-          <li>The watch redraws only once a minute in Always-On mode, so the clock counts minutes there. The seconds ring runs whenever you raise your wrist.</li>
-          <li>Keeping Always-On this dark also saves battery. Samsung asks for most of the screen to stay black in that mode.</li>
+          <li><strong>Stays:</strong> the time (as a green outline), the hourglass, and one green seconds mark ticking round the edge.</li>
+          <li><strong>Goes:</strong> the date, the phone battery, the full seconds ring, the bezel and the glow.</li>
+          <li><strong>To test on your watch:</strong> many watch faces only redraw once a minute in Always-On mode. Some still manage ticking seconds, so we'll check this one on your Watch4. If the mark freezes there, I'll tell you the options.</li>
+          <li>Only one small mark is lit, so the screen stays almost black, which saves battery.</li>
         </ul>
       </section>
       <section>
@@ -108,15 +105,9 @@ svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
   var DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
   var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   var ICONS = {
-    weather: '<circle cx="7" cy="7" r="3.2"/><path d="M7 1v1.6M7 11.4V13M1 7h1.6M11.4 7H13M2.8 2.8l1.1 1.1M10.1 10.1l1.1 1.1M2.8 11.2l1.1-1.1M10.1 3.9l1.1-1.1"/><path d="M8 16.5h7.2a2.6 2.6 0 0 0 0-5.2 3.6 3.6 0 0 0-6.8 1.2A2 2 0 0 0 8 16.5z" fill="#000"/>',
-    heart: '<path d="M9 16s-6.5-3.9-6.5-8.6A3.6 3.6 0 0 1 9 5.3a3.6 3.6 0 0 1 6.5 2.1C15.5 12.1 9 16 9 16z"/>',
     phone: '<rect x="4.5" y="1.5" width="9" height="15" rx="2"/><path d="M7.5 14h3"/><path d="M9.8 4.8 7.6 8.6h2.8l-2.2 3.8"/>'
   };
-  var SLOTS = [
-    { icon: "weather", value: "24°", label: "SUNNY", x: 148 },
-    { icon: "phone", value: "64%", label: "PHONE", x: 225 },
-    { icon: "heart", value: "72", label: "BPM", x: 302 }
-  ];
+  var SLOTS = [{ icon: "phone", value: "64%", label: "PHONE", x: 225 }];
 
   function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; }
   function f(n) { return n.toFixed(2); }
@@ -139,15 +130,16 @@ svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
   s += '<text id="date" x="225" y="142" font-family="Oxanium, sans-serif" font-size="17" font-weight="600" fill="' + GREEN + '" letter-spacing="3" text-anchor="middle" dominant-baseline="central"></text>';
   SLOTS.forEach(function (sl, i) {
     s += '<g fill="none" stroke="' + GREEN + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(' + (sl.x - 9) + ' 262)">' + ICONS[sl.icon] + "</g>";
-    s += '<text x="' + sl.x + '" y="303" font-family="Oxanium, sans-serif" font-size="' + (i === 1 ? 23 : 21) + '" font-weight="600" fill="#effff0" text-anchor="middle" dominant-baseline="central">' + sl.value + "</text>";
+    s += '<text x="' + sl.x + '" y="303" font-family="Oxanium, sans-serif" font-size="26" font-weight="600" fill="#effff0" text-anchor="middle" dominant-baseline="central">' + sl.value + "</text>";
     s += '<text x="' + sl.x + '" y="325" font-family="Oxanium, sans-serif" font-size="10" font-weight="600" fill="' + GREEN + '" letter-spacing="2" text-anchor="middle" dominant-baseline="central">' + sl.label + "</text>";
   });
-  s += '<line x1="186" y1="272" x2="186" y2="328" stroke="' + GREEN + '" stroke-opacity=".28" stroke-width="1.5"/><line x1="264" y1="272" x2="264" y2="328" stroke="' + GREEN + '" stroke-opacity=".28" stroke-width="1.5"/>';
   s += "</g>";
 
   // Ben 10 theme: always shown
   s += '<path class="hg" d="' + hourglass(150, 44) + '" stroke-width="3"/>';
-  [45, 135, 225, 315].forEach(function (d) { s += '<path class="notch" d="M213 50 L237 50 L232 60 L218 60Z" transform="rotate(' + d + ' 225 225)"/>'; });
+
+  // Always-On only: one seconds mark ticking round the edge
+  s += '<rect class="aodsec" id="aodsec" x="222" y="12" width="6" height="21" rx="1.5" fill="' + GREEN + '"/>';
 
   // Clock: always shown (glow only when wrist is up; black halo keeps the hourglass lines off the digits in Always-On)
   s += '<text class="knock time-copy" x="225" y="214" font-family="Oxanium, sans-serif" font-size="88" font-weight="700" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" letter-spacing="1" text-anchor="middle" dominant-baseline="central"></text>';
@@ -166,6 +158,7 @@ svg .notch { transition: fill var(--fade) ease; fill: #62e83c; }
       var t = pad(now.getHours()) + ":" + pad(now.getMinutes());
       times.forEach(function (el) { if (el.textContent !== t) el.textContent = t; });
       dateEl.textContent = DAYS[now.getDay()] + " · " + MONTHS[now.getMonth()] + " " + pad(now.getDate());
+      document.getElementById("aodsec").setAttribute("transform", "rotate(" + sec * 6 + " 225 225)");
       segs.forEach(function (el) {
         var i = +el.getAttribute("data-i");
         el.setAttribute("fill", i <= sec ? (i % 15 === 0 ? GREEN_HI : GREEN) : "#17241a");
