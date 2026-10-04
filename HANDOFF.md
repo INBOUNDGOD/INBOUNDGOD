@@ -4,7 +4,7 @@ The single source of truth for picking up this project mid-stream. Any Claude
 session (any model) that opens this repo should read this file first, then
 keep it current. See `CLAUDE.md` for the update rules.
 
-_Last updated: 2026-10-02_
+_Last updated: 2026-10-04_
 
 ---
 
@@ -284,6 +284,51 @@ clean → verify chip → optional reflow → replace with new H56G32CS4D-X005.
 
 ---
 
+## 1d. Active project: GPS tracker take-back (started 2026-10-04)
+
+**Goal:** an old **2G + SIM** GPS tracker the user built years ago. It was
+configured to report to a vendor's "Chinese database" (a GPS tracking
+platform). The user wants to regain control of their own device and do
+something cool with it. Their own hardware; this is reconfiguring a device
+they built to send data to a server they own.
+
+**Hardware (from photos):** PCB silkscreen `MD302-V01 0511` (a common cheap
+Chinese tracker board); **GT010** GPS module with ceramic patch antenna +
+wire GSM antenna; a shielded **2G GSM modem** (likely SIMCom SIM800/SIM900
+family) with red/black battery wires; combined **SIM + microSD** slot (SD =
+offline logging); pads `VBAT GND CLK RST DAT` = an MCU program/debug header.
+Architecture is the standard MCU + 2G modem + GPS: the MCU sends GPS fixes
+over GPRS to a server IP/port in a fixed protocol, all set by **SMS commands**.
+
+**What "Chinese database" means:** the maker's tracking platform (gpsui.net /
+998gps / gps903.net style). Two stored settings point it there, both
+changeable by SMS: the **APN** and the **server IP/port**. Taking it back =
+re-pointing those at the user's own server.
+
+**Protocol:** one of GT06 / TK103 (Coban) / H02 / Xexun — MD302/GT010
+generation is usually **GT06** or **TK103**. Must confirm, because SMS command
+words differ per firmware and the receiving server must decode the same
+protocol.
+
+**Plan (recommended Path A):** run **Traccar** (free, open source, decodes
+~200 of these protocols) on the user's **Synology NAS** in Docker; make the
+NAS reachable on the tracker's protocol port (public IP/DDNS + port-forward);
+put an active SIM in; text the tracker its APN + the NAS server/port; register
+the IMEI in Traccar. Then geofences, live sharing, history, Home Assistant,
+etc. Path B: read current config via a status SMS first. Path C: read/reflash
+firmware over the debug pads (later, only if needed).
+
+**Big blocker to check first:** this is **2G**. Many carriers have shut 2G
+off; if there's no 2G on the user's network the modem can't connect at all.
+First task is to confirm 2G is still available on their carrier/country.
+
+**Waiting on the user:** country/carrier (to check 2G + find the APN); whether
+the SIM is active and its phone number; what "something cool" means to them;
+any memory of the old platform/admin password/SMS commands; a clear photo of
+the modem can's markings. Full detail in `gps-tracker/notes.md`.
+
+---
+
 ## 2. User preferences (apply to all work here)
 - Likes seeing visual demos of options before committing to one.
 - Uses claude.ai cloud sessions and the Claude desktop app, and switches
@@ -350,6 +395,12 @@ clean → verify chip → optional reflow → replace with new H56G32CS4D-X005.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-04**: New project 1d: GPS tracker take-back. Identified the
+  hardware from photos (MD302-V01 board, GT010 GPS module, 2G GSM modem,
+  SIM+microSD) and drafted the plan (Traccar on the NAS + SMS reconfigure) in
+  `gps-tracker/notes.md`. Flagged the 2G-shutdown blocker to check first.
+  Waiting on the user's carrier/country, SIM status and old-platform details.
 
 - **2026-10-02**: User asked for a downloadable handoff to continue with a
   local model. Made `HANDOFF-bundle.pdf` (HANDOFF.md + GPU notes + annotated
