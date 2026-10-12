@@ -329,39 +329,50 @@ the modem can's markings. Full detail in `gps-tracker/notes.md`.
 
 ---
 
-## 1e. Known but NOT in this repo: the "Hessequa project" (drone landfill surveys)
+## 1e. Project: Hessequa landfill airspace surveys (Qpoint Group)
 
-On 2026-10-12 the user asked "do you know about the Hessequa project?".
-Nothing about it exists in this repo or on GitHub. It lives in the user's
-**Remote Control sessions** (Claude Code running on their own PC, environment
-kind "bridge"), so cloud sessions can't read its files. What's known, from the
-session list and each session's own summary:
+**What it is:** the user's business **Qpoint Group** (www.qpoint.co.za)
+surveyed the **eight licensed landfill sites of Hessequa Local Municipality**
+(Western Cape: Albertinia, Droëkloof/Heidelberg, Gouritsmond,
+Melkhoutfontein/Stilbaai, Slangrivier, Steynskloof/Riversdale,
+Witsand/Uitsig, and the closed Jongensfontein) by drone on 21–22 September
+2026 (DJI Air 3S, GNSS-only photogrammetry) and measured the **airspace**
+(remaining fill capacity under each licence's final landform), the year each
+site will be full, and an indicative closure cost per site. Nine reports,
+all **Draft A dated 5 October 2026**: site reports QPG-2026-001 to 007,
+QPG-2026-009 (Jongensfontein, desktop study) and the consolidated
+QPG-2026-008.
 
-**What it is:** drone photogrammetry surveys (DJI Mini 2 SE + **WebODM**) of
-**eight landfill sites** in **Hessequa Local Municipality** (Garden Route,
-Western Cape; seat Riversdale; towns Albertinia, Gouritsmond, Heidelberg,
-Jongensfontein, Riversdale, Slangrivier, Stilbaai, Witsand). Outputs are
-landfill **"airspace"** (remaining fill capacity) reports and closure-cost
-estimates. "Steynskloof" is the Riversdale landfill; the Western Cape
-facility directory also lists Albertinia, Droëkloof, Gouritsmond,
-Melkhoutfontein, Slangrivier and Witsand sites for Hessequa
-(https://d7.westerncape.gov.za/your_gov/16/facilities/936, dated 2017). Work
-appears to be for the user's business (QLabs / qlabs.co.za, per their other
-sessions).
+**Where the knowledge is, and the privacy rule:** this repo is public, so
+**no client figures go into it** (no volumes, dates, costs, licence numbers).
+`hessequa/notes.md` is a figure-free pointer (scope, documents, method, open
+items, Draft-A editorial issues). The full working notes with every figure
+are in `hessequa/private/notes-full.md`, which is **git-ignored** and exists
+only on the machine where it was written; a copy was sent to the user as a
+file on 2026-10-12. The report PDFs, the A3 maps and the GIS deliverables are
+on the user's PC. The user uploaded all nine PDFs into the 2026-10-12 cloud
+session, where Claude read them in full and re-checked the sums, percentages,
+medians and remaining-life dates (they agree). If the user wants the full
+notes under version control, use a private repo or the NAS.
 
-**Sessions (newest first):**
-| Session | Title | Dates | Where | Last state |
-|---|---|---|---|---|
-| `session_01AztUCt514dL5VSxaBZQvEw` | webodm drone mapping | 2026-10-05 → 10-12 | user's PC | Closure costs for all 8 sites: about R150.6m total (schedule R152.3m), about R33.2m for the 3 critical sites; "for budgeting only, pending site-specific design". Still idle (not archived). |
-| `session_01LKkyoLRjtWcU364XDoFG16` | Drone selection for nature reserve mapping | 2026-10-07 → 10-08 | user's PC | Possibly a separate job: BVLOS cuts a reserve survey to ~5–7 days from ~10. |
-| `session_018uZvRNeCbCqNZ6jbLjhLH4` | webodm drone mapping | 2026-09-25 → 10-05 | user's PC | Made `docs/Airspace-Report-Hessequa-All-Sites-Consolidated.pdf` and `SHARE/Hessequa-All-Sites-Survey-Sep2026.zip` (paths on the user's PC). Archived. |
-| `session_01Fw9e1Zq9h9qTf3hozVVrg2` | Synology NAS multi-tenant storage partitioning | 2026-09-21 → 09-22 | user's PC | Defined the landfill airspace workflow: GCP network, monthly DSM flights with the same settings, fill/remaining by raster maths, regression to the projected full date; optional Python script. |
-| `session_014PfL9XksZeEgXQEh22k1Va` | DJI Mini 2 SE autonomous mapping missions | 2026-09-20 → 09-27 | cloud, this repo | Blocked: "need Steynskloof source doc to verify 'after 2066' duplication". Its branch `claude/dji-mini-2-autonomous-mapping-asguwk` was **never pushed**, so nothing survives. |
+**History:** the work was done in the user's Remote Control sessions (Claude
+Code on their PC), not in this repo: "webodm drone mapping"
+(`session_018uZvRNeCbCqNZ6jbLjhLH4`, 25 Sep–5 Oct, archived, produced the
+consolidated PDF; and `session_01AztUCt514dL5VSxaBZQvEw`, 5–12 Oct, still
+open, closure costs), "Synology NAS multi-tenant storage partitioning"
+(`session_01Fw9e1Zq9h9qTf3hozVVrg2`, 21–22 Sep, defined the airspace
+workflow: GCP network, monthly DSM flights, raster volume maths, regression
+to the full date), "DJI Mini 2 SE autonomous mapping missions"
+(`session_014PfL9XksZeEgXQEh22k1Va`, 20–27 Sep, cloud, blocked on a
+Steynskloof source document; its branch was never pushed) and possibly
+"Drone selection for nature reserve mapping"
+(`session_01LKkyoLRjtWcU364XDoFG16`, 7–8 Oct; may be a different job). On
+2026-10-12 the user asked this cloud session "do you know about the Hessequa
+project?" and then uploaded the reports.
 
-**To continue it from a cloud session:** the user must either resume one of
-the PC sessions, or put the project files (reports, WebODM exports, scripts)
-into a repo this session can reach. Don't guess at numbers from the summaries
-above; they are one-line summaries, not the source data.
+**Status:** reports read and recorded; nothing requested yet. Next: the user
+says what they want (Draft B edits from the inconsistency list, a dashboard
+or map, the annual re-survey workflow, or something else).
 
 ---
 
@@ -431,6 +442,13 @@ above; they are one-line summaries, not the source data.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-12**: Hessequa: the user uploaded all nine report PDFs. Read
+  them in full and re-checked the arithmetic. Full notes with figures went to
+  the git-ignored `hessequa/private/notes-full.md` and to the user as a file;
+  `hessequa/notes.md` is a figure-free pointer (public repo). Section 1e
+  rewritten without figures; the drone is a DJI Air 3S, not the Mini 2 SE
+  named earlier.
 
 - **2026-10-12**: User asked about the "Hessequa project". Found it in their
   Remote Control sessions (drone landfill surveys, WebODM); nothing is in this
