@@ -80,6 +80,13 @@ contours, footprints, QGIS projects, 3D models).
   reaches capacity", "measured in this survey") and lists an item in its cost
   table that its text says is omitted.
 - "DJI Mavic Air 3S" should be "DJI Air 3S".
+- Slangrivier: its date range depends on the landform height (2 m or 5 m),
+  but the consolidated summary tables place it under a column and footnote
+  that say ranges are rate-driven; the closure-cost table's "falls due" and
+  the Figure 1 bar use different landform bases from the rest; the
+  remaining-life chart plots the low landform at the typical rate only; one
+  recommendation says "every assumption examined" gives at least ten years
+  although the report's own literal reading of the licence gives almost none.
 - Sign-off blocks are empty throughout.
 
 ## Status and next steps

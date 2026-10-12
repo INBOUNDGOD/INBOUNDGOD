@@ -443,6 +443,10 @@ or map, the annual re-survey workflow, or something else).
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-12**: Hessequa: checked the Slangrivier footprint and dates at
+  the user's request; added Slangrivier-specific Draft-B points to the notes
+  (private full file, and figure-free in `hessequa/notes.md`).
+
 - **2026-10-12**: Hessequa: the user uploaded all nine report PDFs. Read
   them in full and re-checked the arithmetic. Full notes with figures went to
   the git-ignored `hessequa/private/notes-full.md` and to the user as a file;
