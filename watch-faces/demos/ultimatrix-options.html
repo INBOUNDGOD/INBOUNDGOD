@@ -1,0 +1,151 @@
+<title>Ultimatrix Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: header, then one card per readout pair (wraps to one column on phones), then notes.
+   Single dark look on purpose: watch screens are black. */
+:root {
+  --bg: #0a0d0b;
+  --surface: #111612;
+  --line: #213026;
+  --fg: #e3ece5;
+  --muted: #8a998e;
+  --accent: #62e83c;
+  --display: "Oxanium", "Eurostile", "Segoe UI", system-ui, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 56px; display: grid; gap: 32px; }
+header { display: grid; gap: 8px; max-width: 64ch; }
+.eyebrow { font-family: var(--display); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0; }
+.faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px 22px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.watch { width: min(100%, 300px); aspect-ratio: 1; margin: 0 auto 6px; border-radius: 50%; padding: 10px; background: radial-gradient(circle at 30% 25%, #3b403d, #151816 60%, #0b0d0c); box-shadow: 0 0 0 1px #000, 0 14px 40px rgba(0,0,0,.55), inset 0 1px 2px rgba(255,255,255,.15); max-width: 100%; }
+.watch svg { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.code { font-family: var(--display); font-size: 12px; letter-spacing: .12em; color: var(--accent); }
+.card h2 { font-family: var(--display); font-size: 21px; font-weight: 600; margin: 0; }
+.card p { margin: 0; color: var(--muted); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; border-top: 1px solid var(--line); padding-top: 24px; }
+.notes h3 { font-family: var(--display); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; color: var(--accent); }
+.notes p, .notes ul { margin: 0; color: var(--muted); max-width: 60ch; }
+.notes ul { padding-left: 18px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Ultimatrix · Galaxy Watch4 · 450 × 450</p>
+    <h1>Ultimatrix Options</h1>
+    <p class="lead">Your pick, with the battery and steps swapped for something more useful. Each card shows a different pair in the two bottom slots. The time and seconds ring are live; the readout values are samples.</p>
+  </header>
+
+  <section class="faces" id="faces"></section>
+
+  <section class="notes">
+    <div>
+      <h3>My recommendation</h3>
+      <p>Build both slots as <strong>complications</strong> in Watch Face Studio and set one of these pairs as the default. Then you can swap either slot on the watch at any time (touch and hold the face, then Customize) without rebuilding anything.</p>
+    </div>
+    <div>
+      <h3>Other things a slot can show</h3>
+      <ul><li>Unread notifications</li><li>Stopwatch or timer</li><li>Second time zone</li><li>UV index or rain chance</li><li>Phone battery</li></ul>
+    </div>
+    <div>
+      <h3>Pick one</h3>
+      <p>Tell me which pair you want as the default, or mix two readouts from different cards. I'll then draw the full-size layers and write the Watch Face Studio build guide.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var C = 225, GREEN = "#62e83c", GREEN_HI = "#b8ff9a";
+  var DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+  // 18x18 line icons, drawn around (0,0) = top-left
+  var ICONS = {
+    weather: '<circle cx="7" cy="7" r="3.2"/><path d="M7 1v1.6M7 11.4V13M1 7h1.6M11.4 7H13M2.8 2.8l1.1 1.1M10.1 10.1l1.1 1.1M2.8 11.2l1.1-1.1M10.1 3.9l1.1-1.1"/><path d="M8 16.5h7.2a2.6 2.6 0 0 0 0-5.2 3.6 3.6 0 0 0-6.8 1.2A2 2 0 0 0 8 16.5z" fill="#000"/>',
+    heart: '<path d="M9 16s-6.5-3.9-6.5-8.6A3.6 3.6 0 0 1 9 5.3a3.6 3.6 0 0 1 6.5 2.1C15.5 12.1 9 16 9 16z"/>',
+    event: '<rect x="2" y="3.5" width="14" height="12.5" rx="2"/><path d="M2 7.5h14M6 2v3M12 2v3"/>',
+    sunset: '<path d="M3.5 13a5.5 5.5 0 0 1 11 0"/><path d="M1 15.5h16M9 2v4.5M6.8 4.5 9 6.7l2.2-2.2"/>',
+    alarm: '<circle cx="9" cy="10" r="6"/><path d="M9 7v3.2l2 1.4M2.5 4.2 5 2M15.5 4.2 13 2"/>',
+    rain: '<path d="M4.5 10h9a3 3 0 0 0 0-6 4.2 4.2 0 0 0-8 1A2.5 2.5 0 0 0 4.5 10z"/><path d="M6 13l-1 2.5M10 13l-1 2.5M14 13l-1 2.5"/>'
+  };
+
+  var OPTIONS = [
+    { tag: "Option A", name: "Weather + Heart rate", why: "The two things most people glance at. Temperature with the current condition, and your live pulse from the watch sensor.",
+      slots: [{ icon: "weather", value: "24°", label: "SUNNY" }, { icon: "heart", value: "72", label: "BPM" }] },
+    { tag: "Option B", name: "Next event + Sunset", why: "A planner face. The time of your next calendar event with its title, and when the light goes, handy for drone flights or outdoor jobs.",
+      slots: [{ icon: "event", value: "14:30", label: "SITE VISIT" }, { icon: "sunset", value: "17:58", label: "SUNSET" }] },
+    { tag: "Option C", name: "Weather + Next alarm", why: "A morning-and-night face. The day's weather up front and a reminder of when tomorrow's alarm is set.",
+      slots: [{ icon: "rain", value: "40%", label: "RAIN" }, { icon: "alarm", value: "06:30", label: "ALARM" }] }
+  ];
+
+  function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; }
+  function f(n) { return n.toFixed(2); }
+  function sector(r, d1, d2) { var p1 = pt(r, d1), p2 = pt(r, d2); return "M" + C + " " + C + "L" + f(p1[0]) + " " + f(p1[1]) + "A" + r + " " + r + " 0 0 1 " + f(p2[0]) + " " + f(p2[1]) + "Z"; }
+  function hourglass(r, half) { return sector(r, -half, half) + sector(r, 180 - half, 180 + half); }
+  function txt(cls, x, y, size, fill, weight, extra) {
+    return '<text class="' + cls + '" x="' + x + '" y="' + y + '" font-family="Oxanium, sans-serif" font-size="' + size + '" font-weight="' + (weight || 700) + '" fill="' + fill + '" text-anchor="middle" dominant-baseline="central" ' + (extra || "") + "></text>";
+  }
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  function slot(s, cx) {
+    // icon above, value, label: a small vertical stack centered on cx
+    return '<g fill="none" stroke="' + GREEN + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(' + (cx - 9) + ' 262)">' + ICONS[s.icon] + "</g>" +
+      '<text x="' + cx + '" y="303" font-family="Oxanium, sans-serif" font-size="23" font-weight="600" fill="#effff0" text-anchor="middle" dominant-baseline="central">' + esc(s.value) + "</text>" +
+      '<text x="' + cx + '" y="325" font-family="Oxanium, sans-serif" font-size="10" font-weight="600" fill="' + GREEN + '" letter-spacing="2" text-anchor="middle" dominant-baseline="central">' + esc(s.label) + "</text>";
+  }
+
+  function face(i, opt) {
+    var id = "u" + i;
+    var s = '<svg viewBox="0 0 450 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ultimatrix watch face, ' + opt.name + '">';
+    s += '<defs><radialGradient id="' + id + '-bg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#123a19"/><stop offset=".6" stop-color="#06140a"/><stop offset="1" stop-color="#010302"/></radialGradient>' +
+      '<linearGradient id="' + id + '-ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3033"/><stop offset="1" stop-color="#0b0d0e"/></linearGradient>' +
+      '<filter id="' + id + '-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+    s += '<circle cx="225" cy="225" r="225" fill="#000"/><circle cx="225" cy="225" r="201" fill="none" stroke="url(#' + id + '-ring)" stroke-width="48"/>';
+    for (var k = 0; k < 60; k++) {
+      var big = k % 15 === 0;
+      s += '<rect class="seg" data-i="' + k + '" x="' + (big ? 220.5 : 222) + '" y="' + (big ? 9 : 12) + '" width="' + (big ? 9 : 6) + '" height="' + (big ? 28 : 21) + '" rx="1.5" fill="#17241a" transform="rotate(' + k * 6 + ' 225 225)"/>';
+    }
+    [45, 135, 225, 315].forEach(function (d) { s += '<path d="M213 50 L237 50 L232 60 L218 60Z" fill="' + GREEN + '" transform="rotate(' + d + ' 225 225)"/>'; });
+    s += '<circle cx="225" cy="225" r="175" fill="#030504" stroke="' + GREEN + '" stroke-width="2.5"/><circle cx="225" cy="225" r="168" fill="url(#' + id + '-bg)"/>';
+    s += '<path d="' + hourglass(150, 44) + '" fill="rgba(98,232,60,.07)" stroke="' + GREEN + '" stroke-opacity=".45" stroke-width="3"/>';
+    s += txt("date", 225, 142, 17, GREEN, 600, 'letter-spacing="3"');
+    s += txt("time", 225, 214, 88, "#effff0", 700, 'filter="url(#' + id + '-glow)" letter-spacing="1"');
+    s += '<line x1="225" y1="268" x2="225" y2="330" stroke="' + GREEN + '" stroke-opacity=".3" stroke-width="1.5"/>';
+    s += slot(opt.slots[0], 175) + slot(opt.slots[1], 275);
+    return s + "</svg>";
+  }
+
+  var host = document.getElementById("faces");
+  host.innerHTML = OPTIONS.map(function (o, i) {
+    return '<article class="card"><div class="watch">' + face(i, o) + '</div><span class="code">' + o.tag + "</span><h2>" + o.name + "</h2><p>" + o.why + "</p></article>";
+  }).join("");
+
+  var times = host.querySelectorAll(".time"), dates = host.querySelectorAll(".date"), segs = host.querySelectorAll(".seg");
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  var last = -1;
+  function tick() {
+    var now = new Date(), s = now.getSeconds();
+    if (s !== last) {
+      var t = pad(now.getHours()) + ":" + pad(now.getMinutes());
+      var d = DAYS[now.getDay()] + " · " + MONTHS[now.getMonth()] + " " + pad(now.getDate());
+      times.forEach(function (el) { el.textContent = t; });
+      dates.forEach(function (el) { el.textContent = d; });
+      segs.forEach(function (el) {
+        var i = +el.getAttribute("data-i");
+        el.setAttribute("fill", i <= s ? (i % 15 === 0 ? GREEN_HI : GREEN) : "#17241a");
+      });
+      last = s;
+    }
+    setTimeout(tick, 1000 - now.getMilliseconds() + 5);
+  }
+  tick();
+})();
+</script>
