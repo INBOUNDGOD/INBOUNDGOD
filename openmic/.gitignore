@@ -1,0 +1,12 @@
+# Android build output / local files
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/gradle/wrapper/gradle-wrapper.jar
+# Python
+desktop/__pycache__/
+*.pyc
+# test artifacts
+*.wav

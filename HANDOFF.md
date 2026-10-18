@@ -4,7 +4,7 @@ The single source of truth for picking up this project mid-stream. Any Claude
 session (any model) that opens this repo should read this file first, then
 keep it current. See `CLAUDE.md` for the update rules.
 
-_Last updated: 2026-10-12_
+_Last updated: 2026-10-18_
 
 ---
 
@@ -376,6 +376,69 @@ or map, the annual re-survey workflow, or something else).
 
 ---
 
+## 1f. Active project: OpenMic — phone-as-microphone app (started 2026-10-18)
+
+**Goal:** the user uploaded WO Mic (a "phone as PC microphone" app) — the
+Android APK `WOMic_v5_0.apk` and the Windows desktop installer
+`WOMicClientSetup6.3.exe` (plus Microsoft `VC_redist.x86.exe`) — and asked, via
+the REA project (https://github.com/morluto/rea, "Reverse Engineer Anything",
+an MCP for RE), to reverse-engineer both sides so they can **build and
+redistribute their own** app with its own and extra features.
+
+**Branch:** this project is on `claude/rea-reverse-engineering-7p5i1a` (per the
+task brief), NOT the usual `claude/keen-newton-hcb1bu`.
+
+**Approach / ethics:** clean-room. Analysed WO Mic to understand *architecture
+and protocol*, then wrote an **original** implementation (`OpenMic`). No WO Mic
+code/assets/branding reused. This is interoperability/learning + an independent
+competing product — fine; redistributing WO Mic's own binaries or copying its
+code is not, and the user was told to give OpenMic its own identity.
+
+**RE findings (full detail in `openmic/FINDINGS.md`):**
+- Android `com.wo.voice2`, R8-obfuscated. Pipeline: `AudioRecord` (16-bit PCM
+  mono) → echo-cancel/noise-suppress → resample → Opus (`libcodec-o.so`,
+  8/12/16/24/48 kHz, 20/40 ms) or Speex (`libcodec-s.so`) → transport. A
+  foreground `VoiceService` holds wake + wifi locks. **The phone is the
+  server; the desktop connects.**
+- Transports: Wi-Fi (TCP control port **8125** + UDP audio), Wi-Fi Direct, USB
+  (TCP over `adb forward`), Bluetooth (RFCOMM). Default transport = Wi-Fi.
+- Desktop installer = Nullsoft NSIS v3, **requires admin** → installs a
+  kernel-mode **virtual audio device driver** + a C++ client that decodes the
+  stream and feeds the virtual mic. (Payload LZMA-compressed inside; no 7z in
+  container, so not extracted — architecture inferred, well-known model.)
+- `VC_redist.x86.exe` = Microsoft Visual C++ runtime, a dependency of WO Mic's
+  native client, NOT part of WO Mic. The user's Python receiver needs none.
+
+**What was built — `openmic/` (all original):**
+- `FINDINGS.md`, `PROTOCOL.md` (own clean protocol: one TCP conn, little-endian
+  framed messages HELLO/START/AUDIO/PING/PONG/STOP, PCM16 now + Opus later,
+  port **8126**, phone=server).
+- `desktop/openmic_proto.py`, `openmic_server.py` (receiver: speaker/wav/virtual
+  sinks), `phone_sim.py` (tone generator standing in for the phone).
+  **VERIFIED WORKING end-to-end** here: sim → receiver, 49 frames 0 lost, tone
+  decoded at correct rate/amplitude into a WAV.
+- `android/` — complete original Kotlin app source (OpenMicProtocol, MicServer =
+  ServerSocket+AudioRecord capture+stream, MicService foreground, MainActivity
+  shows IP:port). Gradle project (AGP 8.5.2, Kotlin 1.9.24, minSdk 26).
+  **Not built in cloud** (Google Maven blocked); user builds in Android Studio.
+
+**Virtual-mic strategy told to user:** to appear as a selectable microphone
+without writing a kernel driver, pipe the received audio into a virtual audio
+cable — VB-CABLE (Windows), BlackHole (macOS), null-sink (PipeWire/Pulse). Own
+driver is a big later project.
+
+**Status:** first increment delivered and pushed. Desktop pipeline runs today;
+Android app ready to build locally. **Next:** user builds the APK and tests a
+real phone→PC stream; then roadmap features (PIN auth, Opus, mDNS discovery,
+tray GUI, UDP, Bluetooth) in `openmic/README.md`.
+
+**Open question for the user:** confirm this should stay a fully-standalone
+original product (assumed) vs. being wire-compatible with WO Mic's existing
+desktop client. Also: Windows-only desktop, or keep the cross-platform Python
+receiver.
+
+---
+
 ## 2. User preferences (apply to all work here)
 - Likes seeing visual demos of options before committing to one.
 - Uses claude.ai cloud sessions and the Claude desktop app, and switches
@@ -442,6 +505,13 @@ or map, the annual re-survey workflow, or something else).
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: New project 1f: OpenMic. Reverse-engineered WO Mic (APK with
+  jadx + desktop installer strings); documented architecture/protocol in
+  `openmic/FINDINGS.md`. Designed an original protocol (`openmic/PROTOCOL.md`)
+  and built a working, verified desktop receiver + phone simulator
+  (`openmic/desktop/`) and a complete original Android client
+  (`openmic/android/`). On branch `claude/rea-reverse-engineering-7p5i1a`.
 
 - **2026-10-12**: Hessequa: checked the Slangrivier footprint and dates at
   the user's request; added Slangrivier-specific Draft-B points to the notes
