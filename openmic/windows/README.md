@@ -94,12 +94,29 @@ windows/
 ## Noise suppression engines
 - **Spectral (built-in)** — default, no setup. Frequency-domain denoiser that
   keeps the voice and removes steady noise. The "Noise cut" slider sets strength.
-- **RNNoise (best)** — near-Krisp ML denoiser. To enable it: drop a 64-bit
-  **`rnnoise.dll`** next to `OpenMic.exe`, then choose "RNNoise" in the engine
-  box. Prebuilt DLL: github.com/jagger2048/rnnoise-windows (or build
-  github.com/xiph/rnnoise). If the DLL is missing, OpenMic silently falls back
-  to the spectral engine. (The RNNoise path is hand-written and not yet tested
-  on a real build — report issues.)
+- **RNNoise (best)** — near-Krisp ML denoiser. Needs a 64-bit **`rnnoise.dll`**
+  that exports the Xiph C API (`rnnoise_create`, `rnnoise_process_frame`, …).
+
+  **Get the DLL** (there is no official Xiph prebuilt):
+  - *Build from source (most trustworthy):* build github.com/xiph/rnnoise as a
+    64-bit shared library with CMake + MSVC. Your build machine already has the
+    toolchain, so build it alongside the app.
+  - *Community prebuilt:* github.com/katruud/rnnoise-binaries publishes an x64
+    `rnnoise.dll` (Releases / CI artifacts). Third-party binary — use only if you
+    trust it; building from source avoids that.
+  - Do **not** use the werman/noise-suppression-for-voice DLL — that's a VST
+    *plugin*, its exports won't match.
+
+  **Install the DLL:**
+  - *Best (survives auto-update):* put `rnnoise.dll` in the `publish/` folder
+    **before** `vpk pack`, so it ships inside the installer and every update.
+  - *Quick test:* drop `rnnoise.dll` next to `OpenMic.exe` in the install folder
+    (an auto-update may later replace that folder, so prefer the step above).
+
+  Then pick **"RNNoise (best)"** in the engine box. If the DLL is missing or
+  fails to load, OpenMic silently falls back to the spectral engine. (The
+  RNNoise path is hand-written and not yet tested on a real build — report
+  issues.)
 
 ## Notes
 - **Virtual mic:** install VB-CABLE (free) and pick **"CABLE Input"** in the

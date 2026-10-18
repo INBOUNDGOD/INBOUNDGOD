@@ -7,8 +7,10 @@ namespace OpenMic;
 /// <c>rnnoise.dll</c>. RNNoise is an ML denoiser that handles non-stationary
 /// noise (keyboard, clicks) far better than the built-in spectral gate.
 ///
-/// Setup: drop <c>rnnoise.dll</c> (x64) next to OpenMic.exe. Prebuilt binaries:
-/// github.com/jagger2048/rnnoise-windows, or build github.com/xiph/rnnoise.
+/// Setup: ship a 64-bit <c>rnnoise.dll</c> (Xiph C API) with the app — build it
+/// from github.com/xiph/rnnoise (CMake + MSVC), or use an x64 prebuilt from
+/// github.com/katruud/rnnoise-binaries. Put it in the publish/ folder before
+/// `vpk pack` (or next to OpenMic.exe for a quick test). NOT the werman VST DLL.
 /// If the DLL is missing, construction throws and the app falls back to
 /// SpectralDenoise — so this engine is strictly optional.
 ///
