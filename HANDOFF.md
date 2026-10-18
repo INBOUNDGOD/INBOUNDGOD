@@ -414,28 +414,33 @@ code is not, and the user was told to give OpenMic its own identity.
   framed messages HELLO/START/AUDIO/PING/PONG/STOP, PCM16 now + Opus later,
   port **8126**, phone=server).
 - `desktop/openmic_proto.py`, `openmic_server.py` (receiver: speaker/wav/virtual
-  sinks), `phone_sim.py` (tone generator standing in for the phone).
-  **VERIFIED WORKING end-to-end** here: sim → receiver, 49 frames 0 lost, tone
-  decoded at correct rate/amplitude into a WAV.
+  sinks, `--discover`, `--pin`), `openmic_discovery.py` (UDP-broadcast LAN
+  discovery, no deps), `phone_sim.py` (tone generator standing in for the phone,
+  broadcasts a beacon, enforces PIN). **VERIFIED WORKING end-to-end** here:
+  (1) sim → receiver, 49 frames 0 lost, tone decoded correctly; (2) `--discover`
+  auto-finds the phone + correct PIN streams; (3) wrong PIN is refused.
 - `android/` — complete original Kotlin app source (OpenMicProtocol, MicServer =
-  ServerSocket+AudioRecord capture+stream, MicService foreground, MainActivity
-  shows IP:port). Gradle project (AGP 8.5.2, Kotlin 1.9.24, minSdk 26).
-  **Not built in cloud** (Google Maven blocked); user builds in Android Studio.
+  ServerSocket+AudioRecord capture+stream+PIN, DiscoveryBeacon = UDP broadcast,
+  MicService foreground, MainActivity shows IP:port + optional PIN). Gradle
+  project (AGP 8.5.2, Kotlin 1.9.24, minSdk 26). **Not built in cloud** (Google
+  Maven blocked); user builds in Android Studio.
+
+**Decided 2026-10-18 (user confirmed):** fully-standalone original product
+(own phone app + own desktop receiver), NOT wire-compatible with WO Mic's
+desktop client. Keep the cross-platform Python receiver.
 
 **Virtual-mic strategy told to user:** to appear as a selectable microphone
 without writing a kernel driver, pipe the received audio into a virtual audio
 cable — VB-CABLE (Windows), BlackHole (macOS), null-sink (PipeWire/Pulse). Own
 driver is a big later project.
 
-**Status:** first increment delivered and pushed. Desktop pipeline runs today;
-Android app ready to build locally. **Next:** user builds the APK and tests a
-real phone→PC stream; then roadmap features (PIN auth, Opus, mDNS discovery,
-tray GUI, UDP, Bluetooth) in `openmic/README.md`.
-
-**Open question for the user:** confirm this should stay a fully-standalone
-original product (assumed) vs. being wire-compatible with WO Mic's existing
-desktop client. Also: Windows-only desktop, or keep the cross-platform Python
-receiver.
+**Status:** two increments delivered and pushed. v1 pipeline + PIN auth + LAN
+auto-discovery all built and verified on the desktop side; Android app source
+updated to match (PIN field + discovery beacon). **Next (suggested to user):**
+a desktop tray GUI with a found-phones list so there's no command line at all;
+then Opus, UDP audio, Bluetooth. Roadmap in `openmic/README.md`.
+User still needs to build the APK locally (Android Studio) and test a real
+phone→PC stream.
 
 ---
 
@@ -505,6 +510,13 @@ receiver.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic: user confirmed standalone-original direction. Added
+  PIN auth (token in START, phone rejects on mismatch) and dependency-free LAN
+  auto-discovery (UDP beacon on port 8127) to the protocol, desktop receiver
+  (`--discover`/`--pin`), phone simulator, and the Android app
+  (`DiscoveryBeacon.kt`, PIN field). Verified: discover+PIN streams, wrong PIN
+  refused.
 
 - **2026-10-18**: New project 1f: OpenMic. Reverse-engineered WO Mic (APK with
   jadx + desktop installer strings); documented architecture/protocol in

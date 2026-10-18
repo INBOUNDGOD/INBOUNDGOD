@@ -41,6 +41,11 @@ PROTO_VERSION = 1
 # unrelated app) — this is our own default.
 DEFAULT_PORT = 8126
 
+# UDP port the phone broadcasts a discovery beacon on, so the desktop can find
+# it without the user typing an IP. See openmic_discovery.py.
+DISCOVERY_PORT = 8127
+DISCOVERY_MAGIC = "OPENMIC"
+
 # message types
 T_HELLO = 0x01
 T_START = 0x02

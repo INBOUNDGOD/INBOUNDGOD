@@ -19,6 +19,7 @@ import android.os.PowerManager
 class MicService : Service() {
 
     private var server: MicServer? = null
+    private var beacon: DiscoveryBeacon? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
 
@@ -29,12 +30,17 @@ class MicService : Service() {
         startForeground(1, buildNotification("OpenMic is streaming"))
         acquireLocks()
         if (server == null) {
-            server = MicServer(deviceName = Build.MODEL ?: "Android").also { it.start() }
+            val name = Build.MODEL ?: "Android"
+            val pin = intent?.getStringExtra(EXTRA_PIN)?.takeIf { it.isNotBlank() }
+            server = MicServer(deviceName = name, pin = pin).also { it.start() }
+            beacon = DiscoveryBeacon(name, OpenMicProtocol.DEFAULT_PORT, pin != null)
+                .also { it.start() }
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        beacon?.stop(); beacon = null
         server?.stop(); server = null
         releaseLocks()
         super.onDestroy()
@@ -76,8 +82,10 @@ class MicService : Service() {
     companion object {
         private const val CHANNEL = "openmic"
         const val ACTION_STOP = "com.openmic.app.STOP"
-        fun start(ctx: Context) =
-            ctx.startForegroundService(Intent(ctx, MicService::class.java))
+        const val EXTRA_PIN = "pin"
+        fun start(ctx: Context, pin: String? = null) =
+            ctx.startForegroundService(
+                Intent(ctx, MicService::class.java).putExtra(EXTRA_PIN, pin))
         fun stop(ctx: Context) =
             ctx.startService(Intent(ctx, MicService::class.java).setAction(ACTION_STOP))
     }

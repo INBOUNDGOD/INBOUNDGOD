@@ -23,6 +23,8 @@ class MicServer(
     private val sampleRate: Int = 16000,
     private val frameMs: Int = 20,
     private val deviceName: String = android.os.Build.MODEL ?: "Android",
+    /** Optional PIN. When set, the desktop must send a matching token in START. */
+    private val pin: String? = null,
     private val onState: (State) -> Unit = {},
 ) {
     enum class State { LISTENING, CONNECTED, STOPPED, ERROR }
@@ -78,10 +80,22 @@ class MicServer(
             put("frameSamples", frameSamples)
             put("device", deviceName)
             put("appVersion", BuildInfo.VERSION)
+            put("auth", pin != null)
         })
 
         val start = OpenMicProtocol.readFrame(input)
         if (start.type != OpenMicProtocol.T_START) return
+        // Verify the PIN before streaming any audio.
+        if (pin != null) {
+            val token = try {
+                org.json.JSONObject(String(start.payload, Charsets.UTF_8))
+                    .optString("token", "")
+            } catch (_: Exception) { "" }
+            if (token != pin) {
+                OpenMicProtocol.writeFrame(out, OpenMicProtocol.T_STOP)
+                return
+            }
+        }
         onState(State.CONNECTED)
 
         // A reader thread answers PING / STOP from the desktop.

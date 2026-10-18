@@ -19,6 +19,18 @@ future latency optimisation (see "Roadmap").
 
 Default TCP port: **8126** (our own; deliberately not WO Mic's 8125).
 
+## Discovery (so you don't type IPs)
+The phone broadcasts a small UDP **beacon** on port **8127** (`255.255.255.255`)
+a few times a second while listening. The desktop listens on 8127 and lists the
+phones it hears, then connects over TCP as usual.
+
+Beacon payload (UTF-8 JSON):
+```json
+{ "magic": "OPENMIC", "name": "Pixel 7", "port": 8126, "proto": 1, "auth": true }
+```
+The beacon never contains the PIN. Discovery is optional — typing the phone's IP
+still works, and it's the fallback if broadcast is blocked on the network.
+
 ## Framing
 All multi-byte integers are **little-endian**.
 
@@ -52,12 +64,18 @@ All multi-byte integers are **little-endian**.
 `codec`: `0` = PCM16 (raw 16-bit signed), `1` = Opus.
 `frameSamples`: samples per channel in each AUDIO frame (16000 Hz × 20 ms = 320).
 
+`auth`: `true` if the phone requires a PIN (then START must carry a `token`).
+
 ### START payload (JSON)
-Desktop echoes the parameters it accepts (it may lower the sample rate):
+Desktop echoes the parameters it accepts (it may lower the sample rate), plus
+the PIN if one is required:
 ```json
-{ "sampleRate": 16000, "channels": 1, "codec": 0 }
+{ "sampleRate": 16000, "channels": 1, "codec": 0, "token": "1234" }
 ```
-The phone must honour what START returns.
+The phone must honour what START returns. If the phone requires a PIN and the
+`token` is missing or wrong, the phone replies **STOP** and closes before any
+audio is sent. (The PIN is a simple shared secret; it is sent in clear over the
+LAN, so treat it as "keep casual snoops off", not strong security.)
 
 ### AUDIO payload
 ```
@@ -93,11 +111,15 @@ desktop                         phone (server)
 | frame | 20 ms | 320 samples at 16 kHz |
 | port | 8126 TCP | |
 
-## Roadmap (documented, not in v1)
+## Done since v1
+- **Auth/PIN**: `auth` in HELLO + `token` in START (above). Implemented on both
+  sides and tested.
+- **Discovery**: UDP beacon (above). Implemented on both sides and tested.
+
+## Roadmap (not yet built)
 - **Opus** (`codec=1`): ~16–32 kbit/s, lower latency. Encode on phone with
   libopus/NDK, decode on desktop with `opuslib`. The desktop receiver already
   has the decode hook.
 - **UDP audio**: keep control on TCP; add a UDP socket for AUDIO frames to cut
   latency. `seq`/`tsMs` are already in the frame for reordering/jitter.
 - **Bluetooth**: RFCOMM socket on the phone; same framing.
-- **Auth/PIN**: add a token in HELLO/START so only your PC can connect.

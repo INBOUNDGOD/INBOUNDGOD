@@ -27,9 +27,10 @@ protocol (`PROTOCOL.md`).
 | `FINDINGS.md` | Reverse-engineering analysis of WO Mic (Android + desktop) | done |
 | `PROTOCOL.md` | OpenMic's own wire protocol spec | done, v1 |
 | `desktop/openmic_proto.py` | Shared framing | done |
-| `desktop/openmic_server.py` | Desktop receiver (speaker / wav / virtual-mic sinks) | **working** |
+| `desktop/openmic_discovery.py` | LAN discovery (UDP beacon, no deps) | **working** |
+| `desktop/openmic_server.py` | Desktop receiver (speaker / wav / virtual-mic sinks; `--discover`, `--pin`) | **working** |
 | `desktop/phone_sim.py` | Phone simulator for testing without a phone | **working** |
-| `android/` | The real phone app (Kotlin, PCM16, Wi-Fi/USB) | source complete, build locally |
+| `android/` | The real phone app (Kotlin, PCM16, Wi-Fi/USB, PIN, discovery beacon) | source complete, build locally |
 
 The desktop receiver + simulator are **verified working** (tone streamed and
 decoded end-to-end). The Android app is complete source; build it in Android
@@ -48,14 +49,17 @@ python3 openmic_server.py 127.0.0.1 --sink wav --out test.wav
 
 ## Use it for real
 1. **Build the phone app** (`android/`) in Android Studio and install it.
-2. Open OpenMic on the phone (same Wi-Fi as the PC), tap **Start**. It shows
-   the phone's IP and port.
-3. On the PC:
+2. Open OpenMic on the phone (same Wi-Fi as the PC), optionally type a **PIN**,
+   tap **Start**.
+3. On the PC — no IP typing needed, the PC finds the phone:
    ```bash
    pip install sounddevice numpy          # for live playback
-   python3 desktop/openmic_server.py <phone-ip> --sink speaker
+   python3 desktop/openmic_server.py --discover --sink speaker
+   # if you set a PIN on the phone, add:  --pin 1234
    ```
    You should hear your voice. Use `--sink wav` first if you have no audio out.
+   Prefer to type the address? `python3 desktop/openmic_server.py <phone-ip>`
+   still works.
 
 ### Making it a real microphone other apps can use
 `--sink speaker` just plays the audio. To make OpenMic show up as a
@@ -102,12 +106,16 @@ For OpenMic:
   the `x64` one.
 
 ## Roadmap — "its own features and more"
-Easy wins first:
-- [ ] **PIN/token auth** so only your PC can connect (add a field to HELLO/START).
+Done:
+- [x] **PIN/token auth** so only your PC can connect (tested both sides).
+- [x] **Auto-discovery** so the PC finds the phone — no typing IPs
+      (UDP beacon, dependency-free, tested both sides).
+
+Next:
+- [ ] **Desktop tray app / GUI** with a found-phones list and auto-reconnect
+      (so there's no command line at all).
 - [ ] **Opus codec** (`codec=1`): far less bandwidth, lower latency. Encode on
       the phone via libopus/NDK; the receiver already has the decode hook.
-- [ ] **Desktop tray app / GUI** with device picker and auto-reconnect.
-- [ ] **Auto-discovery** (mDNS/zeroconf) so the PC finds the phone — no typing IPs.
 - [ ] **UDP audio** for lower latency (control stays on TCP).
 - [ ] **Bluetooth** transport (RFCOMM).
 - [ ] **Level meter / mute / gain** in the phone UI (gain hook already in `MicServer`).

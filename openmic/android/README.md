@@ -29,9 +29,10 @@ android/
 │     ├─ AndroidManifest.xml  permissions + foreground service
 │     ├─ java/com/openmic/app/
 │     │  ├─ OpenMicProtocol.kt  wire framing (matches the Python side)
-│     │  ├─ MicServer.kt        ServerSocket + AudioRecord capture + stream
-│     │  ├─ MicService.kt       foreground service, wake/wifi locks
-│     │  └─ MainActivity.kt     shows IP:port, Start/Stop, permissions
+│     │  ├─ MicServer.kt        ServerSocket + AudioRecord capture + stream + PIN
+│     │  ├─ DiscoveryBeacon.kt  UDP broadcast so the PC auto-finds this phone
+│     │  ├─ MicService.kt       foreground service, wake/wifi locks, beacon
+│     │  └─ MainActivity.kt     shows IP:port, optional PIN, Start/Stop
 │     └─ res/                   layout, strings, theme, mic icon
 ```
 
@@ -45,9 +46,10 @@ android/
 - `MainActivity` shows the phone's LAN IP to type on the PC.
 
 ## Notes / next steps
+- **PIN auth** and **LAN discovery** are built in: type a PIN (optional) before
+  Start; the app broadcasts a beacon so the PC's `--discover` finds it.
 - **Opus**: add libopus via the NDK, implement an `OpusEncoder` that fills the
   same AUDIO payload with `codec=1`. The desktop receiver already decodes Opus
   if `opuslib` is installed.
-- **Auth**: add a token to HELLO and verify it in START before streaming.
 - **minSdk 26** (Android 8.0) covers foreground-service + notification-channel
   APIs cleanly. Lower it only if you add the older-API fallbacks.

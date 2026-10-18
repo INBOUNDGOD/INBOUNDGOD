@@ -16,8 +16,10 @@ import json
 import math
 import socket
 import struct
+import threading
 import time
 
+import openmic_discovery
 import openmic_proto as p
 
 
@@ -40,6 +42,13 @@ def serve(args):
     print(f"[phone_sim] listening on {args.bind}:{args.port} "
           f"({args.rate} Hz tone). Connect the desktop receiver.")
 
+    # Broadcast a discovery beacon so --discover can find us.
+    stop_beacon = threading.Event()
+    threading.Thread(target=openmic_discovery.broadcast_loop,
+                     args=("PhoneSimulator", args.port, bool(args.pin),
+                           stop_beacon.is_set),
+                     daemon=True).start()
+
     conn, addr = srv.accept()
     print(f"[phone_sim] desktop connected from {addr}")
 
@@ -49,11 +58,17 @@ def serve(args):
         "codec": p.CODEC_PCM16, "frameSamples": frame_samples,
         "device": "PhoneSimulator", "appVersion": "sim-1.0"}))
 
+    stop_beacon.set()  # stop advertising once someone connected
     msg_type, payload = p.read_frame(conn)
     if msg_type != p.T_START:
         print(f"[phone_sim] expected START, got {msg_type:#x}; closing")
         conn.close(); return
-    print(f"[phone_sim] desktop accepted: {json.loads(payload)}")
+    start = json.loads(payload)
+    if args.pin and start.get("token") != args.pin:
+        print(f"[phone_sim] wrong PIN (got {start.get('token')!r}); rejecting")
+        conn.sendall(p.pack_frame(p.T_STOP))
+        conn.close(); srv.close(); return
+    print(f"[phone_sim] desktop accepted: {start}")
 
     seq = 0
     phase = 0.0
@@ -81,6 +96,7 @@ def main():
     ap.add_argument("--frame-ms", type=int, default=20)
     ap.add_argument("--freq", type=float, default=440.0, help="tone frequency")
     ap.add_argument("--seconds", type=float, default=3.0)
+    ap.add_argument("--pin", default=None, help="require this PIN from the desktop")
     serve(ap.parse_args())
 
 

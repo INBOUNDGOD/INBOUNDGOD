@@ -65,9 +65,33 @@ def make_decoder(codec, sample_rate, channels):
     sys.exit("Unknown codec id %d" % codec)
 
 
+def resolve_host(args):
+    """Return (host, port). If --discover, find a phone on the LAN."""
+    if not args.discover:
+        if not args.host:
+            sys.exit("Give the phone's IP, or use --discover to find it.")
+        return args.host, args.port
+    import openmic_discovery
+    print("[openmic] searching the LAN for phones (3s)...")
+    phones = openmic_discovery.discover()
+    if not phones:
+        sys.exit("No OpenMic phones found. Is the app open and streaming on the "
+                 "same Wi-Fi? You can also pass the IP directly.")
+    if len(phones) == 1:
+        ph = phones[0]
+    else:
+        for i, ph in enumerate(phones):
+            print(f"  [{i}] {ph['name']}  {ph['ip']}:{ph['port']}"
+                  f"{'  [PIN]' if ph['auth'] else ''}")
+        ph = phones[int(input("Pick a phone number: "))]
+    print(f"[openmic] found {ph['name']} at {ph['ip']}:{ph['port']}")
+    return ph["ip"], ph["port"]
+
+
 def run(args):
-    print(f"[openmic] connecting to phone {args.host}:{args.port} ...")
-    sock = socket.create_connection((args.host, args.port), timeout=10)
+    host, port = resolve_host(args)
+    print(f"[openmic] connecting to phone {host}:{port} ...")
+    sock = socket.create_connection((host, port), timeout=10)
     sock.settimeout(None)
 
     msg_type, payload = p.read_frame(sock)
@@ -81,8 +105,24 @@ def run(args):
     channels = hello.get("channels", 1)
     codec = hello.get("codec", p.CODEC_PCM16)
 
-    sock.sendall(p.pack_json(p.T_START, {
-        "sampleRate": sample_rate, "channels": channels, "codec": codec}))
+    start_msg = {"sampleRate": sample_rate, "channels": channels, "codec": codec}
+    if hello.get("auth") and not args.pin:
+        sys.exit("This phone requires a PIN. Re-run with --pin <code>.")
+    if args.pin:
+        start_msg["token"] = args.pin
+    sock.sendall(p.pack_json(p.T_START, start_msg))
+
+    # The phone sends STOP immediately if the PIN is wrong.
+    sock.settimeout(2.0)
+    try:
+        peek_type, peek_payload = p.read_frame(sock)
+    except socket.timeout:
+        sys.exit("No response after START (phone didn't accept the connection).")
+    sock.settimeout(None)
+    if peek_type == p.T_STOP:
+        sys.exit("Phone rejected the connection (wrong PIN?).")
+    # Not a STOP — it's the first real frame; handle it in the loop below.
+    _pending = (peek_type, peek_payload)
 
     sink, close_sink = make_sink(args, sample_rate, channels)
     decode = make_decoder(codec, sample_rate, channels)
@@ -93,9 +133,14 @@ def run(args):
     last_seq = -1
     lost = 0
     t0 = time.time()
+    pending = _pending
     try:
         while True:
-            msg_type, payload = p.read_frame(sock)
+            if pending is not None:
+                msg_type, payload = pending
+                pending = None
+            else:
+                msg_type, payload = p.read_frame(sock)
             if msg_type == p.T_AUDIO:
                 seq, ts_ms, enc = p.unpack_audio(payload)
                 if last_seq >= 0 and seq != last_seq + 1:
@@ -126,8 +171,12 @@ def run(args):
 
 def main():
     ap = argparse.ArgumentParser(description="OpenMic desktop receiver")
-    ap.add_argument("host", help="phone IP address shown in the OpenMic app")
+    ap.add_argument("host", nargs="?", default=None,
+                    help="phone IP shown in the app (omit if using --discover)")
     ap.add_argument("-p", "--port", type=int, default=p.DEFAULT_PORT)
+    ap.add_argument("--discover", action="store_true",
+                    help="find the phone on the LAN instead of typing its IP")
+    ap.add_argument("--pin", default=None, help="PIN if the phone requires one")
     ap.add_argument("--sink", choices=["speaker", "wav", "virtual"],
                     default="speaker")
     ap.add_argument("--out", default="openmic_capture.wav",

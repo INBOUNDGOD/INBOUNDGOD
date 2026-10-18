@@ -7,6 +7,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var status: TextView
     private lateinit var addr: TextView
     private lateinit var toggle: Button
+    private lateinit var pin: EditText
     private var streaming = false
 
     private val perms = registerForActivityResult(
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
         status = findViewById(R.id.status)
         addr = findViewById(R.id.addr)
         toggle = findViewById(R.id.toggle)
+        pin = findViewById(R.id.pin)
         addr.text = "${localIpv4() ?: "no Wi-Fi"} : ${OpenMicProtocol.DEFAULT_PORT}"
         toggle.setOnClickListener { if (streaming) stopStreaming() else requestAndStart() }
     }
@@ -52,16 +55,21 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startStreaming() {
-        MicService.start(this)
+        val code = pin.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        MicService.start(this, code)
         streaming = true
+        pin.isEnabled = false
+        val pinArg = if (code != null) " --pin $code" else ""
         status.text = "Listening. On your PC run:\n" +
-                "python3 openmic_server.py ${localIpv4() ?: "<phone-ip>"}"
+                "python3 openmic_server.py --discover$pinArg\n" +
+                "(or use this phone's IP instead of --discover)"
         toggle.text = "Stop"
     }
 
     private fun stopStreaming() {
         MicService.stop(this)
         streaming = false
+        pin.isEnabled = true
         status.text = "Stopped."
         toggle.text = "Start"
     }
