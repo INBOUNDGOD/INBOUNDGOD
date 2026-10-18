@@ -16,7 +16,10 @@ GitHub Releases — ship a new version and installed copies upgrade on their own
 ## Prerequisites (on the build machine)
 - **.NET 8 SDK** — https://dotnet.microsoft.com/download
 - The Velopack CLI (for packaging + updates):
-  `dotnet tool install -g vpk`
+  `dotnet tool install -g vpk` (or `dotnet tool update -g vpk`). **Keep `vpk`
+  and the `Velopack` NuGet on the same 1.2.x line** — the csproj pins
+  `1.2.161`; if your `vpk` is newer, bump the csproj to match, or packing warns
+  and may break auto-updates.
 
 ## Build & run (for testing)
 ```powershell
@@ -33,7 +36,7 @@ dotnet run --project OpenMic/OpenMic.csproj
    ```
 2. Package it into an installer + update feed with Velopack:
    ```powershell
-   vpk pack --packId OpenMic --packVersion 1.0.0 --packDir publish --mainExe OpenMic.exe
+   vpk pack --packId OpenMic --packVersion 1.0.0 --packDir publish --mainExe OpenMic.exe --runtime win-x64
    ```
    This creates a `Releases/` folder containing **`OpenMic-win-Setup.exe`** (the
    installer you hand out) plus the update packages.
@@ -54,7 +57,7 @@ static server or your NAS and switch `UpdateService` to a `SimpleWebSource`.)
 ### Shipping an update later — this is the whole point
 1. Bump `<Version>` in `OpenMic/OpenMic.csproj`, e.g. `1.0.1`.
 2. `dotnet publish ... -o publish` again.
-3. `vpk pack --packId OpenMic --packVersion 1.0.1 --packDir publish --mainExe OpenMic.exe`
+3. `vpk pack --packId OpenMic --packVersion 1.0.1 --packDir publish --mainExe OpenMic.exe --runtime win-x64`
 4. `vpk upload github --repoUrl ... --publish --releaseName "OpenMic 1.0.1" --tag v1.0.1 --token ...`
 
 Installed copies notice 1.0.1 on next launch, download just the delta, and show

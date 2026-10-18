@@ -13,6 +13,10 @@ object OpenMicProtocol {
     const val PROTO_VERSION = 1
     const val DEFAULT_PORT = 8126
 
+    // UDP discovery beacon (must match desktop/openmic_discovery.py).
+    const val DISCOVERY_PORT = 8127
+    const val DISCOVERY_MAGIC = "OPENMIC"
+
     const val T_HELLO = 0x01
     const val T_START = 0x02
     const val T_AUDIO = 0x03

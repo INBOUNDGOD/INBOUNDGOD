@@ -15,9 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <!-- Auto-update. Floating patch version so `dotnet restore` always finds a
-         valid build; pin an exact version once you've chosen one. -->
-    <PackageReference Include="Velopack" Version="0.0.*" />
+    <!-- Auto-update. Keep this on the same 1.2.x line as the `vpk` tool you pack
+         with (dotnet tool update -g vpk), or packing warns about a mismatch. -->
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
 </Project>
