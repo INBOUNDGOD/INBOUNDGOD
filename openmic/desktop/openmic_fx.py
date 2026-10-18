@@ -156,6 +156,137 @@ class Gain(Effect):
         return np.clip(x * self.g, -1.0, 1.0).astype(np.float32)
 
 
+class LowPass(Effect):
+    """One-pole low-pass. cutoff in Hz."""
+    def __init__(self, cutoff, sample_rate):
+        self.a = 1.0 - math.exp(-2.0 * math.pi * cutoff / sample_rate)
+        self.y = 0.0
+    def reset(self):
+        self.y = 0.0
+    def process(self, x):
+        out = np.empty_like(x)
+        y, a = self.y, self.a
+        for i in range(len(x)):
+            y += a * (x[i] - y)
+            out[i] = y
+        self.y = y
+        return out.astype(np.float32)
+
+
+class HighPass(Effect):
+    """One-pole high-pass (x minus its low-passed version)."""
+    def __init__(self, cutoff, sample_rate):
+        self.a = 1.0 - math.exp(-2.0 * math.pi * cutoff / sample_rate)
+        self.y = 0.0
+    def reset(self):
+        self.y = 0.0
+    def process(self, x):
+        out = np.empty_like(x)
+        y, a = self.y, self.a
+        for i in range(len(x)):
+            y += a * (x[i] - y)
+            out[i] = x[i] - y
+        self.y = y
+        return out.astype(np.float32)
+
+
+class Tremolo(Effect):
+    """Amplitude wobble. rate Hz, depth 0..1."""
+    def __init__(self, rate, depth, sample_rate):
+        self.step = 2.0 * math.pi * rate / sample_rate
+        self.depth = depth
+        self.phase = 0.0
+    def reset(self):
+        self.phase = 0.0
+    def process(self, x):
+        n = len(x)
+        idx = self.phase + self.step * np.arange(n, dtype=np.float32)
+        self.phase = float((self.phase + self.step * n) % (2.0 * math.pi))
+        lfo = 1.0 - self.depth * (0.5 - 0.5 * np.cos(idx))
+        return (x * lfo).astype(np.float32)
+
+
+class Vibrato(Effect):
+    """Pitch wobble via a short modulated delay. rate Hz, depth ms."""
+    def __init__(self, rate, depth_ms, sample_rate):
+        self.step = 2.0 * math.pi * rate / sample_rate
+        self.depth = depth_ms * sample_rate / 1000.0
+        self.base = int(self.depth) + 2
+        self.buf = np.zeros(self.base * 4 + 4, dtype=np.float32)
+        self.wpos = 0
+        self.phase = 0.0
+    def reset(self):
+        self.buf[:] = 0.0; self.wpos = 0; self.phase = 0.0
+    def process(self, x):
+        out = np.empty_like(x)
+        buf, N = self.buf, len(self.buf)
+        for i in range(len(x)):
+            buf[self.wpos] = x[i]
+            d = self.base + self.depth * math.sin(self.phase)
+            r = self.wpos - d
+            r %= N
+            i0 = int(r); frac = r - i0; i1 = (i0 + 1) % N
+            out[i] = buf[i0] * (1 - frac) + buf[i1] * frac
+            self.phase += self.step
+            if self.phase > 2 * math.pi:
+                self.phase -= 2 * math.pi
+            self.wpos = (self.wpos + 1) % N
+        return out.astype(np.float32)
+
+
+class Chorus(Effect):
+    """Dry voice plus a slowly detuned copy — thickens/doubles the voice."""
+    def __init__(self, sample_rate, rate=0.8, depth_ms=8.0, base_ms=18.0, mix=0.5):
+        self.step = 2.0 * math.pi * rate / sample_rate
+        self.depth = depth_ms * sample_rate / 1000.0
+        self.base = base_ms * sample_rate / 1000.0
+        self.mix = mix
+        self.buf = np.zeros(int(self.base + self.depth) * 2 + 8, dtype=np.float32)
+        self.wpos = 0
+        self.phase = 0.0
+    def reset(self):
+        self.buf[:] = 0.0; self.wpos = 0; self.phase = 0.0
+    def process(self, x):
+        out = np.empty_like(x)
+        buf, N = self.buf, len(self.buf)
+        for i in range(len(x)):
+            buf[self.wpos] = x[i]
+            d = self.base + self.depth * (0.5 + 0.5 * math.sin(self.phase))
+            r = (self.wpos - d) % N
+            i0 = int(r); frac = r - i0; i1 = (i0 + 1) % N
+            wet = buf[i0] * (1 - frac) + buf[i1] * frac
+            out[i] = (1 - self.mix) * x[i] + self.mix * wet
+            self.phase += self.step
+            if self.phase > 2 * math.pi:
+                self.phase -= 2 * math.pi
+            self.wpos = (self.wpos + 1) % N
+        return out.astype(np.float32)
+
+
+class NoiseGate(Effect):
+    """Adjustable noise suppression: a smoothed downward expander/gate.
+    strength 0..1 — higher cuts quieter sounds harder. Cheap, dependency-free
+    (not a neural denoiser; see README for the RNNoise upgrade path)."""
+    def __init__(self, strength, sample_rate, frame_ms=20.0):
+        self.strength = max(0.0, min(1.0, strength))
+        # threshold rises with strength; floor gain falls with strength
+        self.threshold = 0.006 + 0.05 * self.strength
+        self.floor = 1.0 - 0.95 * self.strength
+        # smoothing time constants
+        self.gain = 1.0
+        self.attack = 0.4
+        self.release = 0.12
+    def reset(self):
+        self.gain = 1.0
+    def process(self, x):
+        rms = float(np.sqrt(np.mean(x * x))) if len(x) else 0.0
+        target = 1.0 if rms >= self.threshold else self.floor
+        # smooth toward target (fast to open, slow to close)
+        coeff = self.attack if target > self.gain else self.release
+        self.gain += coeff * (target - self.gain)
+        return (x * self.gain).astype(np.float32)
+
+
 class Chain(Effect):
     """Runs several effects in series, with a final safety clip."""
 
@@ -173,8 +304,12 @@ class Chain(Effect):
 
 
 # Preset names shown in the UI. build_effect(name, sample_rate) -> Effect | None
-PRESETS = ["None", "Chipmunk", "Deep voice", "Robot", "Alien", "Echo",
-           "Megaphone", "Monster"]
+PRESETS = [
+    "None", "Chipmunk", "Helium", "Deep voice", "Giant", "Monster", "Demon",
+    "Robot", "Alien", "Cyborg", "Ghost", "Baby", "Echo", "Cave", "Cathedral",
+    "Telephone", "Walkie-talkie", "Radio", "Underwater", "Chorus", "Vibrato",
+    "Tremolo", "Drunk", "Megaphone", "Fan (Leslie)",
+]
 
 
 def process_pcm16(effect, pcm_bytes):
@@ -187,23 +322,52 @@ def process_pcm16(effect, pcm_bytes):
     return (y * 32767.0).astype("<i2").tobytes()
 
 
+def _build(name, sr):
+    match name:
+        case "Chipmunk":      return PitchShift(+7, sr)
+        case "Helium":        return PitchShift(+12, sr)
+        case "Deep voice":    return PitchShift(-6, sr)
+        case "Giant":         return Chain([PitchShift(-10, sr), Gain(1.2)])
+        case "Monster":       return Chain([PitchShift(-9, sr), Drive(2.5)])
+        case "Demon":         return Chain([PitchShift(-12, sr), Drive(3.5), Echo(140, 0.3, 0.4, sr)])
+        case "Robot":         return Chain([RingMod(70, sr), Gain(1.4)])
+        case "Alien":         return Chain([PitchShift(+4, sr), RingMod(30, sr)])
+        case "Cyborg":        return Chain([RingMod(120, sr), Drive(1.8), HighPass(300, sr)])
+        case "Ghost":         return Chain([PitchShift(-3, sr), Vibrato(6, 2.5, sr), Echo(220, 0.5, 0.6, sr)])
+        case "Baby":          return PitchShift(+9, sr)
+        case "Echo":          return Echo(260, 0.45, 0.6, sr)
+        case "Cave":          return Echo(180, 0.55, 0.7, sr)
+        case "Cathedral":     return Chain([Echo(320, 0.6, 0.6, sr), Echo(520, 0.4, 0.4, sr)])
+        case "Telephone":     return Chain([HighPass(400, sr), LowPass(3200, sr), Drive(1.4)])
+        case "Walkie-talkie": return Chain([HighPass(500, sr), LowPass(2800, sr), Drive(4.0), Gain(0.8)])
+        case "Radio":         return Chain([HighPass(250, sr), LowPass(4500, sr), Drive(1.6)])
+        case "Underwater":    return Chain([LowPass(700, sr), Vibrato(1.2, 3.0, sr)])
+        case "Chorus":        return Chorus(sr)
+        case "Vibrato":       return Vibrato(5.5, 2.0, sr)
+        case "Tremolo":       return Tremolo(6.0, 0.7, sr)
+        case "Drunk":         return Vibrato(1.5, 6.0, sr)
+        case "Megaphone":     return Chain([Drive(6.0), Gain(0.8)])
+        case "Fan (Leslie)":  return Chain([Tremolo(5.0, 0.5, sr), Vibrato(5.0, 1.2, sr)])
+        case _:               return None
+
+
 def build_effect(name, sample_rate):
     """Return an Effect for a preset name, or None for 'None'/unknown/no-numpy."""
     if not HAVE_NUMPY or name in (None, "None"):
         return None
-    sr = sample_rate
-    if name == "Chipmunk":
-        return PitchShift(+7, sr)
-    if name == "Deep voice":
-        return PitchShift(-6, sr)
-    if name == "Robot":
-        return Chain([RingMod(70, sr), Gain(1.4)])
-    if name == "Alien":
-        return Chain([PitchShift(+4, sr), RingMod(30, sr)])
-    if name == "Echo":
-        return Echo(260, 0.45, 0.6, sr)
-    if name == "Megaphone":
-        return Chain([Drive(6.0), Gain(0.8)])
-    if name == "Monster":
-        return Chain([PitchShift(-9, sr), Drive(2.5)])
-    return None
+    return _build(name, sample_rate)
+
+
+def build_noise_gate(strength, sample_rate):
+    """NoiseGate for strength in 0..1, or None at/near 0."""
+    if not HAVE_NUMPY or strength <= 0.02:
+        return None
+    return NoiseGate(strength, sample_rate)
+
+
+def apply_volume(pcm_bytes, volume):
+    """Scale int16 PCM by a linear volume (1.0 = unchanged). No-op without numpy."""
+    if not HAVE_NUMPY or abs(volume - 1.0) < 1e-3:
+        return pcm_bytes
+    a = np.frombuffer(pcm_bytes, dtype="<i2").astype(np.float32) * volume
+    return np.clip(a, -32768, 32767).astype("<i2").tobytes()

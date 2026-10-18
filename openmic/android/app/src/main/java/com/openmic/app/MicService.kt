@@ -7,6 +7,9 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
@@ -22,6 +25,8 @@ class MicService : Service() {
     private var beacon: DiscoveryBeacon? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
+    private var audioManager: AudioManager? = null
+    private var focusRequest: AudioFocusRequest? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -35,15 +40,52 @@ class MicService : Service() {
             server = MicServer(deviceName = name, pin = pin).also { it.start() }
             beacon = DiscoveryBeacon(name, OpenMicProtocol.DEFAULT_PORT, pin != null)
                 .also { it.start() }
+            requestAudioFocus()
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        abandonAudioFocus()
         beacon?.stop(); beacon = null
         server?.stop(); server = null
+        RuntimeSettings.paused = false
         releaseLocks()
         super.onDestroy()
+    }
+
+    /**
+     * Ask for audio focus so we're told when a call or another app takes over.
+     * On focus loss we set RuntimeSettings.paused, and MicServer releases the
+     * mic so the other app gets it (honouring the "release on call" setting).
+     */
+    private fun requestAudioFocus() {
+        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(attrs)
+            .setOnAudioFocusChangeListener { change ->
+                when (change) {
+                    AudioManager.AUDIOFOCUS_LOSS,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
+                        RuntimeSettings.paused = true
+                    AudioManager.AUDIOFOCUS_GAIN ->
+                        RuntimeSettings.paused = false
+                }
+            }
+            .build()
+        am.requestAudioFocus(req)
+        audioManager = am
+        focusRequest = req
+    }
+
+    private fun abandonAudioFocus() {
+        focusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+        focusRequest = null
     }
 
     private fun acquireLocks() {

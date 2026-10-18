@@ -135,6 +135,133 @@ public sealed class Gain : IEffect
     }
 }
 
+public sealed class LowPass : IEffect
+{
+    private readonly double _a;
+    private double _y;
+    public LowPass(double cutoff, int sr) => _a = 1.0 - Math.Exp(-2.0 * Math.PI * cutoff / sr);
+    public float[] Process(float[] x)
+    {
+        for (int i = 0; i < x.Length; i++) { _y += _a * (x[i] - _y); x[i] = (float)_y; }
+        return x;
+    }
+}
+
+public sealed class HighPass : IEffect
+{
+    private readonly double _a;
+    private double _y;
+    public HighPass(double cutoff, int sr) => _a = 1.0 - Math.Exp(-2.0 * Math.PI * cutoff / sr);
+    public float[] Process(float[] x)
+    {
+        for (int i = 0; i < x.Length; i++) { _y += _a * (x[i] - _y); x[i] = (float)(x[i] - _y); }
+        return x;
+    }
+}
+
+public sealed class Tremolo : IEffect
+{
+    private readonly double _step, _depth;
+    private double _phase;
+    public Tremolo(double rate, double depth, int sr) { _step = 2.0 * Math.PI * rate / sr; _depth = depth; }
+    public float[] Process(float[] x)
+    {
+        for (int i = 0; i < x.Length; i++)
+        {
+            double lfo = 1.0 - _depth * (0.5 - 0.5 * Math.Cos(_phase));
+            x[i] = (float)(x[i] * lfo);
+            _phase += _step; if (_phase > 2 * Math.PI) _phase -= 2 * Math.PI;
+        }
+        return x;
+    }
+}
+
+public sealed class Vibrato : IEffect
+{
+    private readonly double _step, _depth, _base;
+    private readonly float[] _buf;
+    private int _wpos;
+    private double _phase;
+    public Vibrato(double rate, double depthMs, int sr)
+    {
+        _step = 2.0 * Math.PI * rate / sr;
+        _depth = depthMs * sr / 1000.0;
+        _base = _depth + 2;
+        _buf = new float[(int)(_base * 4) + 8];
+    }
+    public float[] Process(float[] x)
+    {
+        int N = _buf.Length;
+        for (int i = 0; i < x.Length; i++)
+        {
+            _buf[_wpos] = x[i];
+            double d = _base + _depth * Math.Sin(_phase);
+            double r = _wpos - d; r %= N; if (r < 0) r += N;
+            int i0 = (int)r; double frac = r - i0; int i1 = (i0 + 1) % N;
+            x[i] = (float)(_buf[i0] * (1 - frac) + _buf[i1] * frac);
+            _phase += _step; if (_phase > 2 * Math.PI) _phase -= 2 * Math.PI;
+            if (++_wpos >= N) _wpos = 0;
+        }
+        return x;
+    }
+}
+
+public sealed class Chorus : IEffect
+{
+    private readonly double _step, _depth, _base, _mix;
+    private readonly float[] _buf;
+    private int _wpos;
+    private double _phase;
+    public Chorus(int sr, double rate = 0.8, double depthMs = 8.0, double baseMs = 18.0, double mix = 0.5)
+    {
+        _step = 2.0 * Math.PI * rate / sr;
+        _depth = depthMs * sr / 1000.0;
+        _base = baseMs * sr / 1000.0;
+        _mix = mix;
+        _buf = new float[(int)(_base + _depth) * 2 + 8];
+    }
+    public float[] Process(float[] x)
+    {
+        int N = _buf.Length;
+        for (int i = 0; i < x.Length; i++)
+        {
+            _buf[_wpos] = x[i];
+            double d = _base + _depth * (0.5 + 0.5 * Math.Sin(_phase));
+            double r = _wpos - d; r %= N; if (r < 0) r += N;
+            int i0 = (int)r; double frac = r - i0; int i1 = (i0 + 1) % N;
+            double wet = _buf[i0] * (1 - frac) + _buf[i1] * frac;
+            x[i] = (float)((1 - _mix) * x[i] + _mix * wet);
+            _phase += _step; if (_phase > 2 * Math.PI) _phase -= 2 * Math.PI;
+            if (++_wpos >= N) _wpos = 0;
+        }
+        return x;
+    }
+}
+
+/// <summary>Adjustable noise suppression — smoothed downward gate. strength 0..1.</summary>
+public sealed class NoiseGate : IEffect
+{
+    private readonly double _threshold, _floor;
+    private double _gain = 1.0;
+    public NoiseGate(double strength, int sr)
+    {
+        strength = Math.Clamp(strength, 0, 1);
+        _threshold = 0.006 + 0.05 * strength;
+        _floor = 1.0 - 0.95 * strength;
+    }
+    public float[] Process(float[] x)
+    {
+        double sum = 0;
+        for (int i = 0; i < x.Length; i++) sum += x[i] * (double)x[i];
+        double rms = x.Length > 0 ? Math.Sqrt(sum / x.Length) : 0;
+        double target = rms >= _threshold ? 1.0 : _floor;
+        double c = target > _gain ? 0.4 : 0.12;
+        _gain += c * (target - _gain);
+        for (int i = 0; i < x.Length; i++) x[i] = (float)(x[i] * _gain);
+        return x;
+    }
+}
+
 public sealed class Chain : IEffect
 {
     private readonly IEffect[] _fx;
@@ -150,20 +277,57 @@ public sealed class Chain : IEffect
 public static class Fx
 {
     public static readonly string[] Presets =
-        { "None", "Chipmunk", "Deep voice", "Robot", "Alien", "Echo",
-          "Megaphone", "Monster" };
+        { "None", "Chipmunk", "Helium", "Deep voice", "Giant", "Monster",
+          "Demon", "Robot", "Alien", "Cyborg", "Ghost", "Baby", "Echo", "Cave",
+          "Cathedral", "Telephone", "Walkie-talkie", "Radio", "Underwater",
+          "Chorus", "Vibrato", "Tremolo", "Drunk", "Megaphone", "Fan (Leslie)" };
 
     public static IEffect? Build(string? name, int sr) => name switch
     {
         "Chipmunk" => new PitchShift(+7, sr),
+        "Helium" => new PitchShift(+12, sr),
         "Deep voice" => new PitchShift(-6, sr),
+        "Giant" => new Chain(new PitchShift(-10, sr), new Gain(1.2f)),
+        "Monster" => new Chain(new PitchShift(-9, sr), new Drive(2.5)),
+        "Demon" => new Chain(new PitchShift(-12, sr), new Drive(3.5), new Echo(140, 0.3f, 0.4f, sr)),
         "Robot" => new Chain(new RingMod(70, sr), new Gain(1.4f)),
         "Alien" => new Chain(new PitchShift(+4, sr), new RingMod(30, sr)),
+        "Cyborg" => new Chain(new RingMod(120, sr), new Drive(1.8), new HighPass(300, sr)),
+        "Ghost" => new Chain(new PitchShift(-3, sr), new Vibrato(6, 2.5, sr), new Echo(220, 0.5f, 0.6f, sr)),
+        "Baby" => new PitchShift(+9, sr),
         "Echo" => new Echo(260, 0.45f, 0.6f, sr),
+        "Cave" => new Echo(180, 0.55f, 0.7f, sr),
+        "Cathedral" => new Chain(new Echo(320, 0.6f, 0.6f, sr), new Echo(520, 0.4f, 0.4f, sr)),
+        "Telephone" => new Chain(new HighPass(400, sr), new LowPass(3200, sr), new Drive(1.4)),
+        "Walkie-talkie" => new Chain(new HighPass(500, sr), new LowPass(2800, sr), new Drive(4.0), new Gain(0.8f)),
+        "Radio" => new Chain(new HighPass(250, sr), new LowPass(4500, sr), new Drive(1.6)),
+        "Underwater" => new Chain(new LowPass(700, sr), new Vibrato(1.2, 3.0, sr)),
+        "Chorus" => new Chorus(sr),
+        "Vibrato" => new Vibrato(5.5, 2.0, sr),
+        "Tremolo" => new Tremolo(6.0, 0.7, sr),
+        "Drunk" => new Vibrato(1.5, 6.0, sr),
         "Megaphone" => new Chain(new Drive(6.0), new Gain(0.8f)),
-        "Monster" => new Chain(new PitchShift(-9, sr), new Drive(2.5)),
+        "Fan (Leslie)" => new Chain(new Tremolo(5.0, 0.5, sr), new Vibrato(5.0, 1.2, sr)),
         _ => null,
     };
+
+    /// <summary>NoiseGate for strength 0..1, or null at/near 0.</summary>
+    public static IEffect? BuildNoiseGate(double strength, int sr)
+        => strength <= 0.02 ? null : new NoiseGate(strength, sr);
+
+    /// <summary>Scale int16 PCM by a linear volume in place (1.0 = unchanged).</summary>
+    public static byte[] ApplyVolume(byte[] pcm, double volume)
+    {
+        if (Math.Abs(volume - 1.0) < 1e-3) return pcm;
+        for (int i = 0; i + 1 < pcm.Length; i += 2)
+        {
+            short s = (short)(pcm[i] | (pcm[i + 1] << 8));
+            int v = (int)Math.Clamp(s * volume, -32768, 32767);
+            pcm[i] = (byte)(v & 0xFF);
+            pcm[i + 1] = (byte)((v >> 8) & 0xFF);
+        }
+        return pcm;
+    }
 
     /// <summary>Apply an effect to little-endian int16 mono PCM; no-op if null.</summary>
     public static byte[] ProcessPcm16(IEffect? effect, byte[] pcm)

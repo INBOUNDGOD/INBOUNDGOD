@@ -22,10 +22,17 @@ from openmic_client import Receiver
 
 
 def resolve_host(args):
-    """Return (host, port). If --discover, find a phone on the LAN."""
+    """Return (host, port). USB tunnels to localhost; --discover finds the LAN IP."""
+    if args.usb:
+        import openmic_usb
+        err = openmic_usb.forward(args.port)
+        if err:
+            sys.exit(err)
+        print("[openmic] USB tunnel ready (adb forward).")
+        return "127.0.0.1", args.port
     if not args.discover:
         if not args.host:
-            sys.exit("Give the phone's IP, or use --discover to find it.")
+            sys.exit("Give the phone's IP, use --discover, or --usb.")
         return args.host, args.port
     import openmic_discovery
     print("[openmic] searching the LAN for phones (3s)...")
@@ -64,6 +71,7 @@ def run(args):
 
     rx = Receiver(host, port, pin=args.pin, sink=args.sink, device=args.device,
                   out_path=args.out, rate=args.rate, effect=args.effect,
+                  volume=args.volume, noise=args.noise,
                   on_status=on_status, on_stats=on_stats, on_stopped=on_stopped)
     rx.start()
     try:
@@ -82,7 +90,13 @@ def main():
     ap.add_argument("-p", "--port", type=int, default=p.DEFAULT_PORT)
     ap.add_argument("--discover", action="store_true",
                     help="find the phone on the LAN instead of typing its IP")
+    ap.add_argument("--usb", action="store_true",
+                    help="USB mode: adb forward + connect to localhost (low latency)")
     ap.add_argument("--pin", default=None, help="PIN if the phone requires one")
+    ap.add_argument("--volume", type=float, default=1.0,
+                    help="output volume multiplier (1.0 = unchanged)")
+    ap.add_argument("--noise", type=float, default=0.0,
+                    help="noise suppression amount, 0..1")
     ap.add_argument("--sink", choices=["speaker", "wav", "virtual"],
                     default="speaker")
     ap.add_argument("--out", default="openmic_capture.wav",

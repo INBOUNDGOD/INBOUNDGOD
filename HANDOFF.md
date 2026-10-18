@@ -447,14 +447,49 @@ without writing a kernel driver, pipe the received audio into a virtual audio
 cable — VB-CABLE (Windows), BlackHole (macOS), null-sink (PipeWire/Pulse). Own
 driver is a big later project.
 
-**Status:** three increments delivered and pushed. v1 pipeline + PIN auth + LAN
-auto-discovery + a **desktop GUI** all built and verified (desktop side). The
-receive core was refactored into `openmic_client.py` (shared by the CLI and the
-GUI; regression-tested). Android app source matches (PIN + discovery beacon).
-**Next (suggested to user):** Opus codec (less bandwidth/latency; user was
-confused Opus-codec vs Opus-the-model — clarified), then auto-reconnect/tray,
-UDP audio, Bluetooth. Roadmap in `openmic/README.md`. User still needs to build
-the APK locally (Android Studio) and test a real phone→PC stream.
+**Status:** working build confirmed by the user ("works almost perfectly") after
+their build session compiled both apps. Build-blocker fixes + a big feature pass
+are in. **Next (suggested):** Opus codec; studio-grade noise suppression via
+RNNoise; auto-reconnect/tray. Roadmap in `openmic/README.md`.
+
+**Build-blocker fixes (2026-10-18, from the build session's report):**
+- Android `OpenMicProtocol.kt` was missing `DISCOVERY_PORT`/`DISCOVERY_MAGIC`
+  (used by DiscoveryBeacon) — added.
+- Committed the full Gradle wrapper (`gradlew`, `gradlew.bat`,
+  `gradle/wrapper/gradle-wrapper.jar`, gradle 8.9) so the Android project builds
+  without a separate `gradle wrapper` step. (.gitignore no longer excludes the jar.)
+- Windows: Velopack was floating `0.0.*` and resolved to an old build vs vpk
+  1.2.x — pinned to `1.2.161`; added `--runtime win-x64` to the vpk pack docs.
+
+**Feature pass (2026-10-18), across all three apps:**
+- **Latency**: the ~1.5s delay was the Windows app's 2-second output buffer.
+  Now bounded to ~200ms (drop backlog when it grows) + WASAPI latency 30ms;
+  phone AudioRecord buffer cut from 10x to 4x frame; Python sink latency="low".
+- **Voice changer**: expanded to **24 presets** (added Helium, Giant, Demon,
+  Cyborg, Ghost, Baby, Cave, Cathedral, Telephone, Walkie-talkie, Radio,
+  Underwater, Chorus, Vibrato, Tremolo, Drunk, Fan). New fx building blocks
+  (LowPass, HighPass, Tremolo, Vibrato, Chorus). **Search box** in both GUIs.
+  Python presets + pitch shift FFT-verified end-to-end.
+- **Mute** (phone, sends silence), **mic volume** slider (phone),
+  **output volume** slider (desktop).
+- **Noise-suppression slider** (both): adjustable smoothed gate (NoiseGate),
+  tested in Python (passes speech, cuts quiet noise to ~24%). Hardware NS stays
+  on on the phone. RNNoise noted as the studio-grade upgrade.
+- **Mic-release on calls** (phone): MicService requests audio focus; on loss it
+  sets `RuntimeSettings.paused` and MicServer releases AudioRecord + streams
+  silence, resuming on focus gain. Toggle in the app. (OEM behaviour varies.)
+- **USB direct mode**: `adb forward tcp:8126` + connect to 127.0.0.1. Windows
+  app has a USB checkbox (`Usb.cs`); Python has `--usb` + `openmic_usb.py` +
+  GUI checkbox. Phone unchanged (binds all interfaces).
+- **Live output-device switch** (desktop, no restart) — was the user's "have to
+  stop/start" complaint. Both apps.
+- Phone live controls go through a shared `RuntimeSettings` object read every
+  frame by MicServer.
+
+**Still unverified in cloud:** the Windows (C#) and Android (Kotlin) apps are
+hand-written and only static-checked here (no .NET/Android toolchain in the
+container). Python DSP + protocol are run-tested. The user's build session
+compiles the two apps; expect a possible fix round.
 
 **Desktop files now:** `openmic_proto.py` (framing), `openmic_discovery.py`
 (UDP beacon), `openmic_client.py` (shared `Receiver` class + sink/decoder/device
@@ -544,6 +579,18 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic feature pass across all 3 apps: latency fix (bounded
+  output buffers; the Windows 2s buffer caused the ~1.5s delay), 24 voice
+  presets + search, mute, mic/output volume sliders, adjustable noise-gate
+  slider, mic-release-on-call (audio focus), USB direct mode (adb forward),
+  and live output-device switching (no restart). New files: desktop
+  `openmic_usb.py`; android `RuntimeSettings.kt`; windows `Usb.cs`. Python DSP
+  run-tested; C#/Kotlin static-checked only.
+
+- **2026-10-18**: OpenMic build-blocker fixes from the build session: added
+  Android DISCOVERY_PORT/MAGIC constants, committed the full Gradle wrapper,
+  pinned Velopack to 1.2.161 (+ `--runtime win-x64` in docs).
 
 - **2026-10-18**: OpenMic: built a native **Windows desktop app** in
   `openmic/windows/` (C#/.NET 8 WinForms + NAudio + Velopack auto-update), per

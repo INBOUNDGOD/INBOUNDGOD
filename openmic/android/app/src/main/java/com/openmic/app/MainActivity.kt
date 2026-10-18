@@ -7,7 +7,9 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +27,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var addr: TextView
     private lateinit var toggle: Button
     private lateinit var pin: EditText
+    private lateinit var mute: Button
+    private lateinit var micGain: SeekBar
+    private lateinit var micLabel: TextView
+    private lateinit var noise: SeekBar
+    private lateinit var nsLabel: TextView
+    private lateinit var releaseOnCall: CheckBox
     private var streaming = false
 
     private val perms = registerForActivityResult(
@@ -40,8 +48,42 @@ class MainActivity : ComponentActivity() {
         addr = findViewById(R.id.addr)
         toggle = findViewById(R.id.toggle)
         pin = findViewById(R.id.pin)
+        mute = findViewById(R.id.mute)
+        micGain = findViewById(R.id.micGain)
+        micLabel = findViewById(R.id.micLabel)
+        noise = findViewById(R.id.noise)
+        nsLabel = findViewById(R.id.nsLabel)
+        releaseOnCall = findViewById(R.id.releaseOnCall)
         addr.text = "${localIpv4() ?: "no Wi-Fi"} : ${OpenMicProtocol.DEFAULT_PORT}"
         toggle.setOnClickListener { if (streaming) stopStreaming() else requestAndStart() }
+
+        mute.setOnClickListener {
+            RuntimeSettings.muted = !RuntimeSettings.muted
+            mute.text = if (RuntimeSettings.muted) "Unmute" else "Mute"
+        }
+        micGain.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                RuntimeSettings.micGain = p / 100f
+                micLabel.text = "Mic volume: $p%"
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
+        noise.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                RuntimeSettings.noiseStrength = p / 100f
+                nsLabel.text = if (p == 0) "Noise suppression: off" else "Noise suppression: $p%"
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
+        releaseOnCall.setOnCheckedChangeListener { _, checked ->
+            RuntimeSettings.releaseOnCall = checked
+        }
+        // apply initial control values to RuntimeSettings
+        RuntimeSettings.micGain = micGain.progress / 100f
+        RuntimeSettings.noiseStrength = noise.progress / 100f
+        RuntimeSettings.releaseOnCall = releaseOnCall.isChecked
     }
 
     private fun requestAndStart() {

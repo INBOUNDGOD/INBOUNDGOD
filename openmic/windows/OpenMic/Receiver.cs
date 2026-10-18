@@ -14,26 +14,33 @@ public sealed class Receiver
     private readonly string _host;
     private readonly int _port;
     private readonly string? _pin;
-    private readonly string? _deviceName;
+    private string? _deviceName;
     private readonly string? _effectName;
 
     private volatile bool _stop;
     private Thread? _thread;
     private TcpClient? _client;
     private int _sampleRate;
+    private int _channels = 1;
     private IEffect? _effect;
+    private IEffect? _ns;
+    private double _volume;            // read on rx thread, written from UI (atomic enough)
+    private double _noiseStrength;
+    private volatile bool _deviceChangePending;
 
     public event Action<string>? Status;
     public event Action<int, int>? Stats;              // frames, lost
     public event Action<Exception?>? Stopped;           // null = clean stop
 
     public Receiver(string host, int port, string? pin, string? deviceName,
-                    string? effectName)
+                    string? effectName, double volume = 1.0, double noise = 0.0)
     {
         _host = host; _port = port;
         _pin = string.IsNullOrWhiteSpace(pin) ? null : pin;
         _deviceName = deviceName;
         _effectName = effectName;
+        _volume = volume;
+        _noiseStrength = noise;
     }
 
     public void Start()
@@ -52,6 +59,23 @@ public sealed class Receiver
     public void SetEffect(string? name)
     {
         if (_sampleRate > 0) _effect = Fx.Build(name, _sampleRate);
+    }
+
+    /// <summary>Change output volume live (1.0 = unchanged).</summary>
+    public void SetVolume(double volume) => _volume = volume;
+
+    /// <summary>Change noise-suppression amount live (0..1).</summary>
+    public void SetNoise(double strength)
+    {
+        _noiseStrength = strength;
+        if (_sampleRate > 0) _ns = Fx.BuildNoiseGate(strength, _sampleRate);
+    }
+
+    /// <summary>Switch the output device live, no restart.</summary>
+    public void SetDevice(string? deviceName)
+    {
+        _deviceName = deviceName;
+        _deviceChangePending = true;
     }
 
     private void Run()
@@ -99,7 +123,9 @@ public sealed class Receiver
             if (peek.Type == Protocol.TStop)
                 throw new IOException("Phone rejected the connection (wrong PIN?).");
 
+            _channels = channels;
             _effect = Fx.Build(_effectName, _sampleRate);
+            _ns = Fx.BuildNoiseGate(_noiseStrength, _sampleRate);
             output = new AudioOutput(_sampleRate, channels, _deviceName);
             Status?.Invoke($"Streaming {_sampleRate} Hz from {phoneName}");
 
@@ -107,6 +133,20 @@ public sealed class Receiver
             long lastSeq = -1;
             while (!_stop)
             {
+                // live output-device switch (no restart)
+                if (_deviceChangePending)
+                {
+                    _deviceChangePending = false;
+                    try
+                    {
+                        var old = output;
+                        output = new AudioOutput(_sampleRate, _channels, _deviceName);
+                        old?.Dispose();
+                        Status?.Invoke($"Output switched to {_deviceName ?? "default"}");
+                    }
+                    catch (Exception e) { Status?.Invoke("Couldn't switch output: " + e.Message); }
+                }
+
                 var (type, payload) = pending ?? Protocol.ReadFrame(stream);
                 pending = null;
 
@@ -115,7 +155,10 @@ public sealed class Receiver
                     var (seq, _, enc) = Protocol.ParseAudio(payload);
                     if (lastSeq >= 0 && seq != lastSeq + 1) lost += (int)(seq - lastSeq - 1);
                     lastSeq = seq;
-                    output.Write(Fx.ProcessPcm16(_effect, enc));
+                    byte[] pcm = Fx.ProcessPcm16(_ns, enc);       // noise suppression
+                    pcm = Fx.ProcessPcm16(_effect, pcm);          // voice changer
+                    pcm = Fx.ApplyVolume(pcm, _volume);           // output volume
+                    output.Write(pcm);
                     if (++frames % 25 == 0) Stats?.Invoke(frames, lost);
                 }
                 else if (type == Protocol.TPing)

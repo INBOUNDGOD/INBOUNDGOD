@@ -129,19 +129,29 @@ For OpenMic:
 
 ## Roadmap — "its own features and more"
 Done:
-- [x] **PIN/token auth** so only your PC can connect (tested both sides).
-- [x] **Auto-discovery** so the PC finds the phone — no typing IPs
-      (UDP beacon, dependency-free, tested both sides).
-- [x] **Desktop GUI** (`openmic_gui.py`): scan, pick output device, Start/Stop,
-      remembers your settings — no command line needed.
-- [x] **Voice changer** (`openmic_fx.py`): pitch/robot/echo/etc. presets,
-      changeable live, numpy-only (tested: pitch shift verified by FFT).
+- [x] **PIN/token auth** so only your PC can connect.
+- [x] **Auto-discovery** (UDP beacon) — no typing IPs.
+- [x] **Desktop apps**: native Windows app (`windows/`, auto-updating) + a
+      cross-platform Python GUI (`desktop/openmic_gui.py`).
+- [x] **Voice changer** — 24 presets, changeable live, with a search box.
+- [x] **Mute** button (phone).
+- [x] **Mic volume** slider (phone) + **output volume** slider (desktop).
+- [x] **Noise-suppression slider** (both) — adjustable gate (see note below).
+- [x] **Mic-release on calls** — the phone yields the mic to a call/other app
+      and resumes after (toggle in the app).
+- [x] **USB direct mode** — `adb forward`, lower latency, no Wi-Fi jitter.
+- [x] **Switch output device live** — no restart.
+- [x] **Lower latency** — tighter buffers both ends (was ~1.5s; the desktop's
+      2-second audio buffer was the cause).
 
 Next:
 - [ ] **Opus codec** (`codec=1`): far less *data* over the network and lower
       latency (the voice codec Discord/Zoom use — nothing to do with the AI
       model of the same name). Encode on the phone via libopus/NDK; the desktop
       receiver already has the decode hook.
+- [ ] **Better noise suppression**: the slider is a smoothed noise gate today.
+      For studio-grade denoise, drop in **RNNoise** (BSD, free) — a C# binding
+      on the desktop and/or an NDK build on the phone.
 - [ ] **Auto-reconnect** + system-tray icon for the desktop app.
 - [ ] **UDP audio** for lower latency (control stays on TCP).
 - [ ] **Bluetooth** transport (RFCOMM).

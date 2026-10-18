@@ -80,6 +80,14 @@ windows/
    └─ MainForm.cs        the window
 ```
 
+## Controls
+- **USB cable (adb)** checkbox — tunnels over USB (`adb forward`) for lower
+  latency; needs Android platform-tools (`adb`) on PATH and USB debugging on.
+- **Volume** and **Noise cut** sliders, a **voice-changer search box** + 24
+  presets, all live. The **output device switches live** — no stop/start.
+- Latency is bounded to ~200 ms on the output side; Wi-Fi adds a bit more, USB
+  is lowest.
+
 ## Notes
 - **Virtual mic:** install VB-CABLE (free) and pick **"CABLE Input"** in the
   device box; other apps then record from **"CABLE Output."**

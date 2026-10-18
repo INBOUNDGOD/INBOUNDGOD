@@ -53,8 +53,9 @@ def make_sink(kind, sample_rate, channels, out_path=None, device=None):
                            % kind)
     import sounddevice as sd
     dev = device if kind == "virtual" else None
+    # latency="low" keeps the output buffer small so we stay close to real time
     stream = sd.RawOutputStream(samplerate=sample_rate, channels=channels,
-                                dtype="int16", device=dev)
+                                dtype="int16", device=dev, latency="low")
     stream.start()
     return (lambda b: stream.write(b)), (lambda: (stream.stop(), stream.close()))
 
@@ -87,7 +88,8 @@ class Receiver:
 
     def __init__(self, host, port=p.DEFAULT_PORT, pin=None, sink="speaker",
                  device=None, out_path="openmic_capture.wav", rate=None,
-                 effect=None, on_status=None, on_stats=None, on_stopped=None):
+                 effect=None, volume=1.0, noise=0.0,
+                 on_status=None, on_stats=None, on_stopped=None):
         self.host = host
         self.port = port
         self.pin = pin or None
@@ -98,6 +100,10 @@ class Receiver:
         self.effect_name = effect       # voice-changer preset name, or None
         self._effect = None             # built once we know the sample rate
         self._sample_rate = None
+        self.volume = volume            # output volume multiplier (1.0 = unchanged)
+        self.noise_strength = noise     # 0..1 noise suppression amount
+        self._ns = None                 # NoiseGate, built when sample rate known
+        self._pending_device = None     # set by set_device() to swap live
         self.on_status = on_status or (lambda s: None)
         self.on_stats = on_stats or (lambda f, l, s: None)
         self.on_stopped = on_stopped or (lambda reason, error: None)
@@ -115,6 +121,21 @@ class Receiver:
         self.effect_name = name
         if self._sample_rate:
             self._effect = fx.build_effect(name, self._sample_rate)
+
+    def set_volume(self, volume):
+        """Change output volume live (1.0 = unchanged)."""
+        self.volume = volume
+
+    def set_noise(self, strength):
+        """Change noise-suppression amount live (0..1)."""
+        self.noise_strength = strength
+        if self._sample_rate:
+            self._ns = fx.build_noise_gate(strength, self._sample_rate)
+
+    def set_device(self, device):
+        """Switch the output device live, no restart (speaker/virtual sinks)."""
+        self.device = device
+        self._pending_device = (device,)   # tuple marks "a change is pending"
 
     def stop(self):
         self._stop.set()
@@ -169,6 +190,7 @@ class Receiver:
             decode = make_decoder(codec, sample_rate, channels)
             self._sample_rate = sample_rate
             self._effect = fx.build_effect(self.effect_name, sample_rate)
+            self._ns = fx.build_noise_gate(self.noise_strength, sample_rate)
             self.on_status(f"Streaming {sample_rate} Hz, {channels} ch "
                            f"from {hello.get('device', 'phone')}")
 
@@ -176,6 +198,22 @@ class Receiver:
             last_seq = -1
             t0 = time.time()
             while not self._stop.is_set():
+                # live output-device switch (no restart)
+                if self._pending_device is not None:
+                    (newdev,) = self._pending_device
+                    self._pending_device = None
+                    if self.sink_kind in ("speaker", "virtual"):
+                        try:
+                            new_close = None
+                            new_sink, new_close = make_sink(
+                                self.sink_kind, sample_rate, channels,
+                                self.out_path, newdev)
+                            close_sink()        # tear down the old stream
+                            sink, close_sink = new_sink, new_close
+                            self.on_status(f"Output switched to {newdev or 'default'}")
+                        except Exception as e:  # noqa: BLE001
+                            self.on_status(f"Couldn't switch output: {e}")
+
                 if pending is not None:
                     mtype, payload = pending
                     pending = None
@@ -186,7 +224,11 @@ class Receiver:
                     if last_seq >= 0 and seq != last_seq + 1:
                         lost += seq - last_seq - 1
                     last_seq = seq
-                    sink(fx.process_pcm16(self._effect, decode(enc)))
+                    pcm = decode(enc)
+                    pcm = fx.process_pcm16(self._ns, pcm)       # noise suppression
+                    pcm = fx.process_pcm16(self._effect, pcm)   # voice changer
+                    pcm = fx.apply_volume(pcm, self.volume)     # output volume
+                    sink(pcm)
                     frames += 1
                     if frames % 25 == 0:
                         self.on_stats(frames, lost, time.time() - t0)

@@ -45,9 +45,22 @@ android/
   so streaming continues when the screen is off.
 - `MainActivity` shows the phone's LAN IP to type on the PC.
 
+## Controls (on the phone)
+- **Mute** — sends silence without dropping the connection.
+- **Mic volume** slider (0–300%) and **Noise suppression** slider (0–100%,
+  an adjustable gate on top of the hardware noise suppressor).
+- **Release mic to calls / other apps** — when a call or another app takes the
+  mic (audio focus), OpenMic releases it and streams silence, then resumes
+  automatically. (Real-device behaviour varies by OEM; this uses audio focus.)
+- All of these change live while streaming (`RuntimeSettings`), read every frame
+  by `MicServer`.
+
 ## Notes / next steps
 - **PIN auth** and **LAN discovery** are built in: type a PIN (optional) before
   Start; the app broadcasts a beacon so the PC's `--discover` finds it.
+- **USB:** no app change needed — on the PC use USB mode (it runs
+  `adb forward` and connects to the phone over the cable). Enable USB debugging
+  on the phone.
 - **Opus**: add libopus via the NDK, implement an `OpusEncoder` that fills the
   same AUDIO payload with `codec=1`. The desktop receiver already decodes Opus
   if `opuslib` is installed.

@@ -31,7 +31,6 @@ class MicServer(
 
     private val running = AtomicBoolean(false)
     @Volatile private var serverSocket: ServerSocket? = null
-    @Volatile var gainShift: Int = 0   // software volume: <<n, see applyGain
 
     val frameSamples get() = sampleRate * frameMs / 1000
 
@@ -116,33 +115,71 @@ class MicServer(
         captureAndSend(out, clientAlive)
     }
 
-    private fun captureAndSend(out: java.io.OutputStream, alive: AtomicBoolean) {
+    private fun openRecord(): AudioRecord {
         val minBuf = AudioRecord.getMinBufferSize(
             sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        val bufSize = maxOf(minBuf, frameSamples * 2 * 10)
-        val record = AudioRecord(
+        // smaller buffer = lower latency; keep a little headroom above one frame
+        val bufSize = maxOf(minBuf, frameSamples * 2 * 4)
+        return AudioRecord(
             MediaRecorder.AudioSource.MIC, sampleRate,
             AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufSize)
+    }
 
-        val aec = if (AcousticEchoCanceler.isAvailable())
-            AcousticEchoCanceler.create(record.audioSessionId)?.apply { enabled = true } else null
-        val ns = if (NoiseSuppressor.isAvailable())
-            NoiseSuppressor.create(record.audioSessionId)?.apply { enabled = true } else null
-
+    private fun captureAndSend(out: java.io.OutputStream, alive: AtomicBoolean) {
+        var record: AudioRecord? = null
+        var aec: AcousticEchoCanceler? = null
+        var ns: NoiseSuppressor? = null
         val samples = ShortArray(frameSamples)
         val bytes = ByteArray(frameSamples * 2)
         var seq = 0
+        var nsGain = 1.0f
         val t0 = System.currentTimeMillis()
         try {
-            record.startRecording()
             while (running.get() && alive.get()) {
+                val paused = RuntimeSettings.releaseOnCall && RuntimeSettings.paused
+                if (paused) {
+                    // Yield the mic to the call/other app: release AudioRecord and
+                    // send silence so the desktop stays connected.
+                    if (record != null) {
+                        try { record.stop() } catch (_: Exception) {}
+                        record.release(); aec?.release(); ns?.release()
+                        record = null; aec = null; ns = null
+                    }
+                    java.util.Arrays.fill(bytes, 0)
+                    val tsMs = (System.currentTimeMillis() - t0).toInt()
+                    synchronized(out) { OpenMicProtocol.writeAudio(out, seq, tsMs, bytes, bytes.size) }
+                    seq++
+                    Thread.sleep(frameMs.toLong())
+                    continue
+                }
+
+                if (record == null) {
+                    record = openRecord()
+                    if (record.state != AudioRecord.STATE_INITIALIZED) {
+                        record.release(); record = null
+                        Thread.sleep(200); continue
+                    }
+                    aec = if (AcousticEchoCanceler.isAvailable())
+                        AcousticEchoCanceler.create(record.audioSessionId)?.apply { enabled = true } else null
+                    ns = if (NoiseSuppressor.isAvailable())
+                        NoiseSuppressor.create(record.audioSessionId)?.apply { enabled = true } else null
+                    record.startRecording()
+                    nsGain = 1.0f
+                }
+
                 var off = 0
                 while (off < frameSamples) {
                     val r = record.read(samples, off, frameSamples - off)
                     if (r < 0) throw IllegalStateException("AudioRecord read $r")
                     off += r
                 }
-                applyGain(samples)
+
+                if (RuntimeSettings.muted) {
+                    java.util.Arrays.fill(samples, 0)
+                } else {
+                    applyGain(samples)
+                    nsGain = applyNoiseSuppression(samples, nsGain)
+                }
                 pcm16ToBytes(samples, bytes)
                 val tsMs = (System.currentTimeMillis() - t0).toInt()
                 synchronized(out) {
@@ -151,22 +188,40 @@ class MicServer(
                 seq++
             }
         } finally {
-            try { record.stop() } catch (_: Exception) {}
-            record.release(); aec?.release(); ns?.release()
+            try { record?.stop() } catch (_: Exception) {}
+            record?.release(); aec?.release(); ns?.release()
         }
     }
 
-    /** Software volume: shift left to amplify (gainShift>0) with clamping. */
+    /** Software mic volume (RuntimeSettings.micGain, 1.0 = unchanged), clamped. */
     private fun applyGain(s: ShortArray) {
-        val g = gainShift
-        if (g == 0) return
+        val g = RuntimeSettings.micGain
+        if (g == 1.0f) return
         for (i in s.indices) {
-            var v = s[i].toInt()
-            v = if (g > 0) v shl g else v shr (-g)
-            if (v > 32767) v = 32767
-            if (v < -32768) v = -32768
-            s[i] = v.toShort()
+            val v = (s[i] * g).toInt()
+            s[i] = v.coerceIn(-32768, 32767).toShort()
         }
+    }
+
+    /**
+     * Adjustable software noise suppression (downward gate), matching
+     * desktop/openmic_fx.py NoiseGate. Returns the updated smoothed gain.
+     */
+    private fun applyNoiseSuppression(s: ShortArray, prevGain: Float): Float {
+        val strength = RuntimeSettings.noiseStrength
+        if (strength <= 0.02f) return 1.0f
+        val threshold = 0.006f + 0.05f * strength
+        val floor = 1.0f - 0.95f * strength
+        var sum = 0.0
+        for (v in s) { val f = v / 32768f; sum += f.toDouble() * f }
+        val rms = Math.sqrt(sum / s.size).toFloat()
+        val target = if (rms >= threshold) 1.0f else floor
+        val c = if (target > prevGain) 0.4f else 0.12f
+        val gain = prevGain + c * (target - prevGain)
+        for (i in s.indices) {
+            s[i] = (s[i] * gain).toInt().coerceIn(-32768, 32767).toShort()
+        }
+        return gain
     }
 
     private fun pcm16ToBytes(s: ShortArray, b: ByteArray) {

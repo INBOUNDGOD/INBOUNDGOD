@@ -19,6 +19,7 @@ from tkinter import filedialog, ttk
 import openmic_discovery
 import openmic_fx
 import openmic_proto as p
+import openmic_usb
 from openmic_client import Receiver, list_output_devices
 
 CONFIG = os.path.join(os.path.expanduser("~"), ".openmic_gui.json")
@@ -71,42 +72,60 @@ class App:
         ttk.Label(row, text="PIN:").pack(side="left", padx=(8, 0))
         self.pin_var = tk.StringVar(value=self.cfg.get("pin", ""))
         ttk.Entry(row, textvariable=self.pin_var, width=8).pack(side="left")
+        row2 = ttk.Frame(box); row2.pack(fill="x", pady=(4, 0))
+        self.usb_var = tk.BooleanVar(value=self.cfg.get("usb", False))
+        ttk.Checkbutton(row2, text="USB cable (adb) — lower latency",
+                        variable=self.usb_var).pack(side="left")
 
         # --- output selection ---
         box2 = ttk.LabelFrame(frm, text="2. Send audio to", padding=8)
         box2.pack(fill="x", pady=4)
         self.sink_var = tk.StringVar(value=self.cfg.get("sink", "speaker"))
         ttk.Radiobutton(box2, text="Speakers (hear it now)", value="speaker",
-                        variable=self.sink_var, command=self._sync).pack(anchor="w")
+                        variable=self.sink_var, command=self.on_output_change).pack(anchor="w")
         rowv = ttk.Frame(box2); rowv.pack(fill="x", anchor="w")
         ttk.Radiobutton(rowv, text="Virtual mic device:", value="virtual",
-                        variable=self.sink_var, command=self._sync).pack(side="left")
+                        variable=self.sink_var, command=self.on_output_change).pack(side="left")
         self.device_var = tk.StringVar(value=self.cfg.get("device", ""))
         self.device_combo = ttk.Combobox(rowv, textvariable=self.device_var,
                                           width=24, values=list_output_devices())
         self.device_combo.pack(side="left", padx=4)
+        self.device_combo.bind("<<ComboboxSelected>>", self.on_output_change)
         roww = ttk.Frame(box2); roww.pack(fill="x", anchor="w")
         ttk.Radiobutton(roww, text="WAV file:", value="wav",
-                        variable=self.sink_var, command=self._sync).pack(side="left")
+                        variable=self.sink_var, command=self.on_output_change).pack(side="left")
         self.wav_var = tk.StringVar(value=self.cfg.get("wav", "openmic_capture.wav"))
         ttk.Entry(roww, textvariable=self.wav_var, width=22).pack(side="left", padx=4)
         ttk.Button(roww, text="...", width=3, command=self.pick_wav).pack(side="left")
         ttk.Label(box2, text="Tip: for apps like Discord, install VB-CABLE and "
-                  'pick "CABLE Input" here.', foreground="#666",
-                  wraplength=380).pack(anchor="w", pady=(4, 0))
+                  'pick "CABLE Input" here. Output device switches live.',
+                  foreground="#666", wraplength=380).pack(anchor="w", pady=(4, 0))
+        vol = ttk.Frame(box2); vol.pack(fill="x", pady=(6, 0))
+        ttk.Label(vol, text="Volume", width=9).pack(side="left")
+        self.vol_var = tk.DoubleVar(value=float(self.cfg.get("volume", 1.0)))
+        ttk.Scale(vol, from_=0.0, to=2.0, variable=self.vol_var, length=200,
+                  command=self.on_volume).pack(side="left", padx=6)
+        ns = ttk.Frame(box2); ns.pack(fill="x", pady=(2, 0))
+        ttk.Label(ns, text="Noise cut", width=9).pack(side="left")
+        self.ns_var = tk.DoubleVar(value=float(self.cfg.get("noise", 0.0)))
+        ttk.Scale(ns, from_=0.0, to=1.0, variable=self.ns_var, length=200,
+                  command=self.on_noise).pack(side="left", padx=6)
 
-        # --- voice changer ---
+        # --- voice changer (with search) ---
         box3 = ttk.LabelFrame(frm, text="3. Voice changer", padding=8)
         box3.pack(fill="x", pady=4)
+        ttk.Label(box3, text="search:").pack(side="left")
+        self.effect_filter = tk.StringVar()
+        ttk.Entry(box3, textvariable=self.effect_filter, width=10).pack(side="left", padx=4)
+        self.effect_filter.trace_add("write", lambda *_: self.filter_effects())
         self.effect_var = tk.StringVar(value=self.cfg.get("effect", "None"))
         self.effect_combo = ttk.Combobox(box3, textvariable=self.effect_var,
                                           values=openmic_fx.PRESETS, width=16,
                                           state="readonly")
-        self.effect_combo.pack(side="left")
+        self.effect_combo.pack(side="left", padx=4)
         self.effect_combo.bind("<<ComboboxSelected>>", self.on_effect_change)
-        note = ("numpy needed: pip install numpy" if not openmic_fx.HAVE_NUMPY
-                else "Change it live while streaming.")
-        ttk.Label(box3, text="  " + note, foreground="#666").pack(side="left")
+        if not openmic_fx.HAVE_NUMPY:
+            ttk.Label(box3, text="(pip install numpy)", foreground="#666").pack(side="left")
 
         # --- controls ---
         ctl = ttk.Frame(frm); ctl.pack(fill="x", pady=8)
@@ -164,6 +183,25 @@ class App:
             self.wav_var.set(path)
             self.sink_var.set("wav"); self._sync()
 
+    def on_output_change(self, _event=None):
+        self._sync()
+        if self.rx is not None and self.sink_var.get() in ("speaker", "virtual"):
+            self.rx.set_device(self.device_var.get() or None)
+        self._save()
+
+    def on_volume(self, _v=None):
+        if self.rx is not None:
+            self.rx.set_volume(float(self.vol_var.get()))
+
+    def on_noise(self, _v=None):
+        if self.rx is not None:
+            self.rx.set_noise(float(self.ns_var.get()))
+
+    def filter_effects(self):
+        q = self.effect_filter.get().strip().lower()
+        matches = [p for p in openmic_fx.PRESETS if q in p.lower()] or openmic_fx.PRESETS
+        self.effect_combo.config(values=matches)
+
     # ---- start / stop ----
     def _selected_phone(self):
         ip = self.ip_var.get().strip()
@@ -176,15 +214,23 @@ class App:
         return None, None
 
     def start(self):
-        host, port = self._selected_phone()
-        if not host:
-            self.status.set("Pick a scanned phone or type its IP first.")
-            return
+        if self.usb_var.get():
+            err = openmic_usb.forward(p.DEFAULT_PORT)
+            if err:
+                self.status.set("USB: " + err)
+                return
+            host, port = "127.0.0.1", p.DEFAULT_PORT
+        else:
+            host, port = self._selected_phone()
+            if not host:
+                self.status.set("Pick a scanned phone or type its IP first.")
+                return
         self._save()
         self.rx = Receiver(
             host, port, pin=self.pin_var.get().strip() or None,
             sink=self.sink_var.get(), device=self.device_var.get() or None,
             out_path=self.wav_var.get(), effect=self.effect_var.get(),
+            volume=float(self.vol_var.get()), noise=float(self.ns_var.get()),
             on_status=lambda s: self.events.put(("status", s)),
             on_stats=lambda f, l, s: self.events.put(("stats", (f, l, s))),
             on_stopped=lambda r, e: self.events.put(("stopped", (r, e))))
@@ -228,7 +274,9 @@ class App:
         save_config({
             "ip": self.ip_var.get().strip(), "pin": self.pin_var.get().strip(),
             "sink": self.sink_var.get(), "device": self.device_var.get(),
-            "wav": self.wav_var.get(), "effect": self.effect_var.get()})
+            "wav": self.wav_var.get(), "effect": self.effect_var.get(),
+            "volume": float(self.vol_var.get()), "noise": float(self.ns_var.get()),
+            "usb": bool(self.usb_var.get())})
 
     def on_close(self):
         if self.rx:
