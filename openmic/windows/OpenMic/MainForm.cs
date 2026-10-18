@@ -1,0 +1,186 @@
+using System.Text.Json;
+
+namespace OpenMic;
+
+public sealed class MainForm : Form
+{
+    private readonly ListBox _phones = new() { Height = 90 };
+    private readonly Button _scan = new() { Text = "Scan Wi-Fi", Width = 100 };
+    private readonly TextBox _ip = new() { Width = 130 };
+    private readonly TextBox _pin = new() { Width = 70 };
+    private readonly ComboBox _device = new() { Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly ComboBox _effect = new() { Width = 140, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly Button _start = new() { Text = "Start", Width = 90 };
+    private readonly Button _stop = new() { Text = "Stop", Width = 90, Enabled = false };
+    private readonly Label _status = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 44, Padding = new Padding(10, 6, 10, 6) };
+    private readonly LinkLabel _update = new() { Text = "", AutoSize = true, Visible = false };
+
+    private readonly UpdateService _updater = new();
+    private List<Phone> _found = new();
+    private Receiver? _rx;
+
+    public MainForm()
+    {
+        Text = "OpenMic";
+        ClientSize = new Size(440, 470);
+        Font = new Font("Segoe UI", 9F);
+        FormBorderStyle = FormBorderStyle.FixedSingle;
+        MaximizeBox = false;
+        BuildUi();
+
+        foreach (var d in AudioOutput.OutputDevices()) _device.Items.Add(d);
+        foreach (var p in Fx.Presets) _effect.Items.Add(p);
+        _effect.SelectedIndex = 0;
+        LoadSettings();
+
+        _scan.Click += (_, _) => Scan();
+        _start.Click += (_, _) => Start();
+        _stop.Click += (_, _) => _rx?.Stop();
+        _effect.SelectedIndexChanged += (_, _) => { _rx?.SetEffect(Effect()); SaveSettings(); };
+        _update.LinkClicked += (_, _) => _updater.ApplyAndRestart();
+        FormClosing += (_, _) => { _rx?.Stop(); SaveSettings(); };
+
+        SetStatus(AudioOutput.OutputDevices().Count == 0
+            ? "No output devices found."
+            : "Idle. Scan for your phone, or type its IP.");
+
+        Shown += async (_, _) => await CheckForUpdate();
+    }
+
+    private void BuildUi()
+    {
+        int y = 12;
+        Controls.Add(new Label { Text = "OpenMic", Font = new Font("Segoe UI", 15F, FontStyle.Bold), AutoSize = true, Location = new Point(12, y) });
+        y += 34;
+        Controls.Add(new Label { Text = "Turn your phone into a PC microphone.", AutoSize = true, Location = new Point(12, y) });
+        y += 28;
+
+        Controls.Add(new Label { Text = "1. Phone", Font = new Font("Segoe UI", 9F, FontStyle.Bold), AutoSize = true, Location = new Point(12, y) });
+        y += 20;
+        _phones.SetBounds(12, y, 416, 90); Controls.Add(_phones); y += 96;
+        _scan.Location = new Point(12, y); Controls.Add(_scan);
+        Controls.Add(new Label { Text = "or IP:", AutoSize = true, Location = new Point(122, y + 4) });
+        _ip.Location = new Point(166, y); Controls.Add(_ip);
+        Controls.Add(new Label { Text = "PIN:", AutoSize = true, Location = new Point(306, y + 4) });
+        _pin.Location = new Point(348, y); Controls.Add(_pin);
+        y += 40;
+
+        Controls.Add(new Label { Text = "2. Send audio to", Font = new Font("Segoe UI", 9F, FontStyle.Bold), AutoSize = true, Location = new Point(12, y) });
+        y += 20;
+        _device.Location = new Point(12, y); Controls.Add(_device); y += 28;
+        Controls.Add(new Label { Text = "Pick your speakers to hear it, or a virtual cable (e.g. \"CABLE Input\") so other apps use it as a mic.", AutoSize = false, Width = 416, Height = 30, ForeColor = Color.Gray, Location = new Point(12, y) });
+        y += 36;
+
+        Controls.Add(new Label { Text = "3. Voice changer", Font = new Font("Segoe UI", 9F, FontStyle.Bold), AutoSize = true, Location = new Point(12, y) });
+        y += 20;
+        _effect.Location = new Point(12, y); Controls.Add(_effect);
+        Controls.Add(new Label { Text = "change it live while streaming", AutoSize = true, ForeColor = Color.Gray, Location = new Point(162, y + 4) });
+        y += 40;
+
+        _start.Location = new Point(12, y); Controls.Add(_start);
+        _stop.Location = new Point(110, y); Controls.Add(_stop);
+        _update.Location = new Point(210, y + 4); Controls.Add(_update);
+
+        Controls.Add(_status);
+    }
+
+    private string? Pin() => string.IsNullOrWhiteSpace(_pin.Text) ? null : _pin.Text.Trim();
+    private string Effect() => _effect.SelectedItem?.ToString() ?? "None";
+
+    private void Scan()
+    {
+        _scan.Enabled = false; _scan.Text = "Scanning...";
+        SetStatus("Searching the Wi-Fi for phones (3s)...");
+        Task.Run(() =>
+        {
+            var phones = Discovery.Discover();
+            BeginInvoke(() =>
+            {
+                _found = phones;
+                _phones.Items.Clear();
+                foreach (var p in phones) _phones.Items.Add(p.ToString());
+                if (phones.Count > 0) { _phones.SelectedIndex = 0; SetStatus($"Found {phones.Count} phone(s). Pick one and press Start."); }
+                else SetStatus("No phones found. Open OpenMic on the phone and press Start there, then Scan again — or type the IP.");
+                _scan.Enabled = true; _scan.Text = "Scan Wi-Fi";
+            });
+        });
+    }
+
+    private (string? host, int port) SelectedPhone()
+    {
+        if (!string.IsNullOrWhiteSpace(_ip.Text)) return (_ip.Text.Trim(), Protocol.DefaultPort);
+        int i = _phones.SelectedIndex;
+        if (i >= 0 && i < _found.Count) return (_found[i].Ip, _found[i].Port);
+        return (null, Protocol.DefaultPort);
+    }
+
+    private void Start()
+    {
+        var (host, port) = SelectedPhone();
+        if (host == null) { SetStatus("Pick a scanned phone or type its IP first."); return; }
+        SaveSettings();
+
+        _rx = new Receiver(host, port, Pin(),
+            _device.SelectedItem?.ToString(), Effect());
+        _rx.Status += s => BeginInvoke(() => SetStatus(s));
+        _rx.Stats += (f, l) => BeginInvoke(() => SetStatus($"Streaming — {f} frames, {l} lost"));
+        _rx.Stopped += ex => BeginInvoke(() =>
+        {
+            SetStatus(ex == null ? "Stopped." : "Error: " + ex.Message);
+            _start.Enabled = true; _stop.Enabled = false; _rx = null;
+        });
+        _rx.Start();
+        _start.Enabled = false; _stop.Enabled = true;
+    }
+
+    private async Task CheckForUpdate()
+    {
+        string? version = await _updater.CheckAndPrepareAsync();
+        if (version != null)
+        {
+            _update.Text = $"Update to {version} ready — click to restart";
+            _update.Visible = true;
+        }
+    }
+
+    private void SetStatus(string s) => _status.Text = s;
+
+    // ---- settings (%APPDATA%/OpenMic/settings.json) ----
+    private static string SettingsPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                     "OpenMic", "settings.json");
+
+    private void LoadSettings()
+    {
+        try
+        {
+            if (!File.Exists(SettingsPath)) return;
+            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsPath));
+            var r = doc.RootElement;
+            if (r.TryGetProperty("ip", out var ip)) _ip.Text = ip.GetString() ?? "";
+            if (r.TryGetProperty("pin", out var pin)) _pin.Text = pin.GetString() ?? "";
+            if (r.TryGetProperty("device", out var dv) && _device.Items.Contains(dv.GetString()))
+                _device.SelectedItem = dv.GetString();
+            if (r.TryGetProperty("effect", out var ef) && _effect.Items.Contains(ef.GetString()))
+                _effect.SelectedItem = ef.GetString();
+        }
+        catch { }
+    }
+
+    private void SaveSettings()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+            var obj = new Dictionary<string, string?>
+            {
+                ["ip"] = _ip.Text.Trim(),
+                ["pin"] = _pin.Text.Trim(),
+                ["device"] = _device.SelectedItem?.ToString(),
+                ["effect"] = Effect(),
+            };
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(obj));
+        }
+        catch { }
+    }
+}

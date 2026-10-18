@@ -10,3 +10,9 @@ desktop/__pycache__/
 *.pyc
 # test artifacts
 *.wav
+# .NET (Windows app) build output
+windows/**/bin/
+windows/**/obj/
+windows/publish/
+windows/Releases/
+windows/.vs/

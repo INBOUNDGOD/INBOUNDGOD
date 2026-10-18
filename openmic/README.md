@@ -13,7 +13,7 @@ protocol (`PROTOCOL.md`).
 ```
 ┌─────────────┐   Wi-Fi / USB (TCP, port 8126)   ┌──────────────────┐
 │  Phone app  │ ───────────────────────────────▶ │ Desktop receiver │
-│ (Android)   │   PCM16 audio frames, our proto   │ (Python)         │
+│ (Android)   │   PCM16 audio frames, our proto   │ (Windows / Python)│
 │  = server   │                                   │  = client        │
 └─────────────┘                                   └──────┬───────────┘
    captures mic                                          │ plays to a
@@ -26,6 +26,8 @@ protocol (`PROTOCOL.md`).
 |---|---|---|
 | `FINDINGS.md` | Reverse-engineering analysis of WO Mic (Android + desktop) | done |
 | `PROTOCOL.md` | OpenMic's own wire protocol spec | done, v1 |
+| `windows/` | **The real desktop app** — native C#/.NET, installs with Setup.exe, auto-updates, voice changer | source complete, build on Windows |
+| `desktop/*.py` | Reference/testing implementation (cross-platform, and the phone simulator) | **working** |
 | `desktop/openmic_proto.py` | Shared framing | done |
 | `desktop/openmic_discovery.py` | LAN discovery (UDP beacon, no deps) | **working** |
 | `desktop/openmic_client.py` | Shared receive core (connect/decode/sink, PIN) | **working** |
@@ -54,15 +56,16 @@ python3 openmic_server.py 127.0.0.1 --sink wav --out test.wav
 1. **Build the phone app** (`android/`) in Android Studio and install it.
 2. Open OpenMic on the phone (same Wi-Fi as the PC), optionally type a **PIN**,
    tap **Start**.
-3. On the PC, run the **desktop app** (a window, no command line):
-   ```bash
-   pip install sounddevice numpy          # for live playback (skip for WAV)
-   python3 desktop/openmic_gui.py
-   ```
-   Press **Scan Wi-Fi**, pick your phone, choose where the audio goes, press
-   **Start**. (On Linux the GUI needs Tk: `sudo apt install python3-tk`.)
+3. On the PC, install and open the **Windows app** (`windows/`): run its
+   `Setup.exe` once (see `windows/README.md` to build it), then open OpenMic,
+   press **Scan Wi-Fi**, pick your phone, choose where the audio goes, pick a
+   voice changer if you want, and press **Start**. It updates itself when you
+   publish new versions — no reinstall.
 
-   Prefer a command line? Same thing without a window:
+   There's also a cross-platform **Python** version (same features) if you're on
+   macOS/Linux or just testing: `pip install sounddevice numpy` then
+   `python3 desktop/openmic_gui.py` (Linux GUI needs `sudo apt install
+   python3-tk`). Prefer a command line? Same thing without a window:
    ```bash
    python3 desktop/openmic_server.py --discover --sink speaker
    # if you set a PIN on the phone, add:  --pin 1234

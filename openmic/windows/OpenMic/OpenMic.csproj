@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>OpenMic</AssemblyName>
+    <RootNamespace>OpenMic</RootNamespace>
+    <!-- Bump this for each release you publish; the installed app auto-updates
+         to the newest release it finds. -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <!-- Auto-update. Floating patch version so `dotnet restore` always finds a
+         valid build; pin an exact version once you've chosen one. -->
+    <PackageReference Include="Velopack" Version="0.0.*" />
+  </ItemGroup>
+
+</Project>

@@ -427,7 +427,20 @@ code is not, and the user was told to give OpenMic its own identity.
 
 **Decided 2026-10-18 (user confirmed):** fully-standalone original product
 (own phone app + own desktop receiver), NOT wire-compatible with WO Mic's
-desktop client. Keep the cross-platform Python receiver.
+desktop client.
+
+**Decided 2026-10-18 (user):** the desktop app must be a **native installable
+Windows app, NOT Python**, and must **auto-update** (install once; new versions
+apply themselves, no full reinstall). Built a C#/.NET WinForms app in
+`openmic/windows/` using NAudio (audio out + device picker) and **Velopack**
+(auto-update from GitHub Releases of INBOUNDGOD/INBOUNDGOD). Same features as
+the Python version: scan/discover, PIN, output-device picker, voice changer
+(live). The Python desktop (`openmic/desktop/`) is now the cross-platform
+reference + the phone simulator for testing. **The Windows app was NOT compiled
+in the cloud** (.NET is Windows-only tooling) — only hand-written; the user's
+app-building session compiles it, expect a possible fix round. Build/package/
+auto-update steps: `openmic/windows/README.md` (dotnet publish self-contained →
+`vpk pack` → `vpk upload github`; bump csproj `<Version>` per release).
 
 **Virtual-mic strategy told to user:** to appear as a selectable microphone
 without writing a kernel driver, pipe the received audio into a virtual audio
@@ -531,6 +544,14 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic: built a native **Windows desktop app** in
+  `openmic/windows/` (C#/.NET 8 WinForms + NAudio + Velopack auto-update), per
+  the user's request for an installable, non-Python, self-updating app. Ports
+  the protocol, discovery, PIN and the voice changer to C#. Installs via
+  `Setup.exe`; updates from GitHub Releases. Not compiled in cloud (Windows-only
+  tooling) — user's build session compiles it. Python desktop reframed as the
+  cross-platform reference + phone simulator. See `openmic/windows/README.md`.
 
 - **2026-10-18**: OpenMic: added a voice changer (`openmic_fx.py`, numpy):
   real-time pitch shift (tempo-preserving delay-line, FFT-verified), ring-mod
