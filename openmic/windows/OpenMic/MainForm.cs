@@ -25,6 +25,9 @@ public sealed class MainForm : Form
     private List<Phone> _found = new();
     private Receiver? _rx;
 
+    private readonly NotifyIcon _tray = new();
+    private bool _reallyExit;
+
     public MainForm()
     {
         Text = "OpenMic";
@@ -48,7 +51,8 @@ public sealed class MainForm : Form
         _volume.Scroll += (_, _) => { _volumeLbl.Text = _volume.Value + "%"; _rx?.SetVolume(_volume.Value / 100.0); };
         _noise.Scroll += (_, _) => { _noiseLbl.Text = _noise.Value == 0 ? "off" : _noise.Value + "%"; _rx?.SetNoise(_noise.Value / 100.0); };
         _update.LinkClicked += (_, _) => _updater.ApplyAndRestart();
-        FormClosing += (_, _) => { _rx?.Stop(); SaveSettings(); };
+        SetupTray();
+        FormClosing += OnFormClosing;
 
         SetStatus(AudioOutput.OutputDevices().Count == 0
             ? "No output devices found."
@@ -188,6 +192,52 @@ public sealed class MainForm : Form
     }
 
     private void SetStatus(string s) => _status.Text = s;
+
+    // ---- system tray (keep streaming when the window is closed) ----
+    private void SetupTray()
+    {
+        _tray.Icon = System.Drawing.SystemIcons.Application;
+        _tray.Text = "OpenMic";
+        _tray.Visible = true;
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Open OpenMic", null, (_, _) => ShowFromTray());
+        menu.Items.Add("Quit", null, (_, _) => ExitApp());
+        _tray.ContextMenuStrip = menu;
+        _tray.DoubleClick += (_, _) => ShowFromTray();
+    }
+
+    private void ShowFromTray()
+    {
+        Show();
+        WindowState = FormWindowState.Normal;
+        ShowInTaskbar = true;
+        Activate();
+    }
+
+    private void ExitApp()
+    {
+        _reallyExit = true;
+        Close();
+    }
+
+    private void OnFormClosing(object? sender, FormClosingEventArgs e)
+    {
+        // Clicking the window's X hides to the tray and keeps streaming.
+        if (!_reallyExit && e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            Hide();
+            ShowInTaskbar = false;
+            _tray.ShowBalloonTip(2000, "OpenMic",
+                "Still running in the tray. Right-click the icon to quit.",
+                ToolTipIcon.Info);
+            return;
+        }
+        _rx?.Stop();
+        SaveSettings();
+        _tray.Visible = false;
+        _tray.Dispose();
+    }
 
     // ---- settings (%APPDATA%/OpenMic/settings.json) ----
     private static string SettingsPath =>

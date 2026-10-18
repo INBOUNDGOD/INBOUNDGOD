@@ -87,6 +87,9 @@ windows/
   presets, all live. The **output device switches live** — no stop/start.
 - Latency is bounded to ~200 ms on the output side; Wi-Fi adds a bit more, USB
   is lowest.
+- **System tray:** closing the window hides OpenMic to the tray and keeps
+  streaming. Double-click the tray icon to reopen, or right-click → **Quit** to
+  actually exit.
 
 ## Notes
 - **Virtual mic:** install VB-CABLE (free) and pick **"CABLE Input"** in the

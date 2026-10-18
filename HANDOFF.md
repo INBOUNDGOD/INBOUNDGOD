@@ -580,6 +580,11 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-18**: OpenMic Windows app: system-tray support — closing the window
+  hides to the tray and keeps streaming (NotifyIcon in `MainForm.cs`); tray menu
+  Open/Quit, double-click to reopen. Real exit only via Quit. (Windows app only;
+  the Python reference GUI has no tray.)
+
 - **2026-10-18**: OpenMic feature pass across all 3 apps: latency fix (bounded
   output buffers; the Windows 2s buffer caused the ~1.5s delay), 24 voice
   presets + search, mute, mic/output volume sliders, adjustable noise-gate
