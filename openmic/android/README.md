@@ -54,6 +54,10 @@ android/
   automatically. (Real-device behaviour varies by OEM; this uses audio focus.)
 - All of these change live while streaming (`RuntimeSettings`), read every frame
   by `MicServer`.
+- **Noise suppression** uses the same frequency-domain spectral denoiser as the
+  desktop (`SpectralDenoiseK.kt`) — keeps the voice, removes steady noise. Use
+  it on the phone *or* the desktop, not both (avoids double-processing).
+- **Dark mode** follows the system setting (`values-night/themes.xml`).
 
 ## Notes / next steps
 - **PIN auth** and **LAN discovery** are built in: type a PIN (optional) before

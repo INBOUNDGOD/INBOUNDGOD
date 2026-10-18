@@ -132,7 +132,8 @@ class MicServer(
         val samples = ShortArray(frameSamples)
         val bytes = ByteArray(frameSamples * 2)
         var seq = 0
-        var nsGain = 1.0f
+        var nsDenoiser: SpectralDenoiseK? = null
+        var nsApplied = 0f
         val t0 = System.currentTimeMillis()
         try {
             while (running.get() && alive.get()) {
@@ -164,7 +165,7 @@ class MicServer(
                     ns = if (NoiseSuppressor.isAvailable())
                         NoiseSuppressor.create(record.audioSessionId)?.apply { enabled = true } else null
                     record.startRecording()
-                    nsGain = 1.0f
+                    nsDenoiser = null   // restart the denoiser with the fresh mic
                 }
 
                 var off = 0
@@ -178,7 +179,16 @@ class MicServer(
                     java.util.Arrays.fill(samples, 0)
                 } else {
                     applyGain(samples)
-                    nsGain = applyNoiseSuppression(samples, nsGain)
+                    val s = RuntimeSettings.noiseStrength
+                    if (s > 0.02f) {
+                        if (nsDenoiser == null || kotlin.math.abs(s - nsApplied) > 0.01f) {
+                            nsDenoiser = SpectralDenoiseK(sampleRate, s); nsApplied = s
+                        }
+                        val den = nsDenoiser!!.processShorts(samples)
+                        System.arraycopy(den, 0, samples, 0, samples.size)
+                    } else {
+                        nsDenoiser = null
+                    }
                 }
                 pcm16ToBytes(samples, bytes)
                 val tsMs = (System.currentTimeMillis() - t0).toInt()
@@ -203,26 +213,6 @@ class MicServer(
         }
     }
 
-    /**
-     * Adjustable software noise suppression (downward gate), matching
-     * desktop/openmic_fx.py NoiseGate. Returns the updated smoothed gain.
-     */
-    private fun applyNoiseSuppression(s: ShortArray, prevGain: Float): Float {
-        val strength = RuntimeSettings.noiseStrength
-        if (strength <= 0.02f) return 1.0f
-        val threshold = 0.006f + 0.05f * strength
-        val floor = 1.0f - 0.95f * strength
-        var sum = 0.0
-        for (v in s) { val f = v / 32768f; sum += f.toDouble() * f }
-        val rms = Math.sqrt(sum / s.size).toFloat()
-        val target = if (rms >= threshold) 1.0f else floor
-        val c = if (target > prevGain) 0.4f else 0.12f
-        val gain = prevGain + c * (target - prevGain)
-        for (i in s.indices) {
-            s[i] = (s[i] * gain).toInt().coerceIn(-32768, 32767).toShort()
-        }
-        return gain
-    }
 
     private fun pcm16ToBytes(s: ShortArray, b: ByteArray) {
         for (i in s.indices) {

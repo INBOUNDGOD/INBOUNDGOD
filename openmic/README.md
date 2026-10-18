@@ -136,7 +136,14 @@ Done:
 - [x] **Voice changer** — 24 presets, changeable live, with a search box.
 - [x] **Mute** button (phone).
 - [x] **Mic volume** slider (phone) + **output volume** slider (desktop).
-- [x] **Noise-suppression slider** (both) — adjustable gate (see note below).
+- [x] **Noise suppression** (both) — frequency-domain **spectral denoiser**
+      (keeps the voice, removes steady noise; tested: 84–97% voice kept while
+      cutting noise 94–99%). Windows also offers an optional **RNNoise** engine
+      for near-Krisp quality (drop in `rnnoise.dll`).
+- [x] **Voice changer** — 30 distinct presets (no more copy-paste duplicates)
+      with a search box.
+- [x] **Dark UI** — Windows app restyled (dark, cards, accent); Android follows
+      the system light/dark setting.
 - [x] **Mic-release on calls** — the phone yields the mic to a call/other app
       and resumes after (toggle in the app).
 - [x] **USB direct mode** — `adb forward`, lower latency, no Wi-Fi jitter.
@@ -149,10 +156,21 @@ Next:
       latency (the voice codec Discord/Zoom use — nothing to do with the AI
       model of the same name). Encode on the phone via libopus/NDK; the desktop
       receiver already has the decode hook.
-- [ ] **Better noise suppression**: the slider is a smoothed noise gate today.
-      For studio-grade denoise, drop in **RNNoise** (BSD, free) — a C# binding
-      on the desktop and/or an NDK build on the phone.
-- [ ] **Auto-reconnect** + system-tray icon for the desktop app.
+- [ ] **DeepFilterNet** engine (top-tier denoise) via ONNX Runtime, as a third
+      NS engine beside Spectral and RNNoise.
+- [ ] **Custom voice** preset with live pitch/formant sliders — unlimited
+      variations (there is no big free "voice pack" to pull from; voice changers
+      are just parameterised DSP, so this is how you get endless options).
+- [ ] **Auto-reconnect** for the desktop app.
+
+### A note on noise suppression quality
+Three tiers, best-effort free:
+1. **Spectral** (built in, default) — removes steady noise (fans, hiss, hum)
+   well and keeps your voice. Not magic against sudden non-steady noise
+   (keyboard, clicks).
+2. **RNNoise** (optional, Windows) — an ML denoiser, much better on
+   non-stationary noise; roughly Discord-grade. Needs `rnnoise.dll`.
+3. **DeepFilterNet** (roadmap) — the closest free thing to Krisp, heavier.
 - [ ] **UDP audio** for lower latency (control stays on TCP).
 - [ ] **Bluetooth** transport (RFCOMM).
 - [ ] **Level meter / mute / gain** in the phone UI (gain hook already in `MicServer`).

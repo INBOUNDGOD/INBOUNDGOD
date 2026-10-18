@@ -26,6 +26,7 @@ public sealed class Receiver
     private IEffect? _ns;
     private double _volume;            // read on rx thread, written from UI (atomic enough)
     private double _noiseStrength;
+    private string? _noiseEngine;
     private volatile bool _deviceChangePending;
 
     public event Action<string>? Status;
@@ -33,7 +34,8 @@ public sealed class Receiver
     public event Action<Exception?>? Stopped;           // null = clean stop
 
     public Receiver(string host, int port, string? pin, string? deviceName,
-                    string? effectName, double volume = 1.0, double noise = 0.0)
+                    string? effectName, double volume = 1.0, double noise = 0.0,
+                    string? noiseEngine = null)
     {
         _host = host; _port = port;
         _pin = string.IsNullOrWhiteSpace(pin) ? null : pin;
@@ -41,6 +43,7 @@ public sealed class Receiver
         _effectName = effectName;
         _volume = volume;
         _noiseStrength = noise;
+        _noiseEngine = noiseEngine;
     }
 
     public void Start()
@@ -68,7 +71,14 @@ public sealed class Receiver
     public void SetNoise(double strength)
     {
         _noiseStrength = strength;
-        if (_sampleRate > 0) _ns = Fx.BuildNoiseGate(strength, _sampleRate);
+        if (_sampleRate > 0) _ns = Fx.BuildNoiseSuppressor(strength, _sampleRate, _noiseEngine);
+    }
+
+    /// <summary>Change noise-suppression engine live (Spectral / RNNoise).</summary>
+    public void SetNoiseEngine(string? engine)
+    {
+        _noiseEngine = engine;
+        if (_sampleRate > 0) _ns = Fx.BuildNoiseSuppressor(_noiseStrength, _sampleRate, _noiseEngine);
     }
 
     /// <summary>Switch the output device live, no restart.</summary>
@@ -125,7 +135,7 @@ public sealed class Receiver
 
             _channels = channels;
             _effect = Fx.Build(_effectName, _sampleRate);
-            _ns = Fx.BuildNoiseGate(_noiseStrength, _sampleRate);
+            _ns = Fx.BuildNoiseSuppressor(_noiseStrength, _sampleRate, _noiseEngine);
             output = new AudioOutput(_sampleRate, channels, _deviceName);
             Status?.Invoke($"Streaming {_sampleRate} Hz from {phoneName}");
 

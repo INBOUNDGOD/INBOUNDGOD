@@ -91,9 +91,21 @@ windows/
   streaming. Double-click the tray icon to reopen, or right-click → **Quit** to
   actually exit.
 
+## Noise suppression engines
+- **Spectral (built-in)** — default, no setup. Frequency-domain denoiser that
+  keeps the voice and removes steady noise. The "Noise cut" slider sets strength.
+- **RNNoise (best)** — near-Krisp ML denoiser. To enable it: drop a 64-bit
+  **`rnnoise.dll`** next to `OpenMic.exe`, then choose "RNNoise" in the engine
+  box. Prebuilt DLL: github.com/jagger2048/rnnoise-windows (or build
+  github.com/xiph/rnnoise). If the DLL is missing, OpenMic silently falls back
+  to the spectral engine. (The RNNoise path is hand-written and not yet tested
+  on a real build — report issues.)
+
 ## Notes
 - **Virtual mic:** install VB-CABLE (free) and pick **"CABLE Input"** in the
   device box; other apps then record from **"CABLE Output."**
+- **Dark UI** with grouped cards. The voice-changer box has a search field and
+  30 distinct presets.
 - **Codec:** this app plays PCM (what the phone sends today). When the phone
   gains Opus, add a decoder (e.g. the `Concentus` NuGet) in `Receiver.cs`.
 - **Icon/signing:** add `--icon` to `vpk pack` for a custom icon; code-signing

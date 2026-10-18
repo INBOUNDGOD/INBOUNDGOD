@@ -277,43 +277,66 @@ public sealed class Chain : IEffect
 public static class Fx
 {
     public static readonly string[] Presets =
-        { "None", "Chipmunk", "Helium", "Deep voice", "Giant", "Monster",
-          "Demon", "Robot", "Alien", "Cyborg", "Ghost", "Baby", "Echo", "Cave",
-          "Cathedral", "Telephone", "Walkie-talkie", "Radio", "Underwater",
-          "Chorus", "Vibrato", "Tremolo", "Drunk", "Megaphone", "Fan (Leslie)" };
+        { "None",
+          "Chipmunk", "Helium", "Squirrel", "Child",
+          "Deep voice", "Giant", "Monster", "Demon", "Villain",
+          "Robot", "Cyborg", "Android", "Glitch",
+          "Alien", "Ghost", "Space Echo",
+          "Telephone", "Walkie-talkie", "Radio", "Megaphone", "Underwater",
+          "Cave", "Cathedral", "Stadium",
+          "Chorus", "Vibrato", "Tremolo", "Drunk", "Fan (Leslie)" };
 
     public static IEffect? Build(string? name, int sr) => name switch
     {
         "Chipmunk" => new PitchShift(+7, sr),
         "Helium" => new PitchShift(+12, sr),
-        "Deep voice" => new PitchShift(-6, sr),
-        "Giant" => new Chain(new PitchShift(-10, sr), new Gain(1.2f)),
-        "Monster" => new Chain(new PitchShift(-9, sr), new Drive(2.5)),
+        "Squirrel" => new Chain(new PitchShift(+9, sr), new Tremolo(9.0, 0.4, sr)),
+        "Child" => new Chain(new PitchShift(+5, sr), new HighPass(300, sr)),
+        "Deep voice" => new PitchShift(-5, sr),
+        "Giant" => new Chain(new PitchShift(-10, sr), new LowPass(1500, sr), new Echo(300, 0.5f, 0.4f, sr)),
+        "Monster" => new Chain(new PitchShift(-7, sr), new Drive(3.0), new RingMod(40, sr)),
         "Demon" => new Chain(new PitchShift(-12, sr), new Drive(3.5), new Echo(140, 0.3f, 0.4f, sr)),
+        "Villain" => new Chain(new PitchShift(-4, sr), new Echo(320, 0.55f, 0.5f, sr), new Drive(1.4)),
         "Robot" => new Chain(new RingMod(70, sr), new Gain(1.4f)),
-        "Alien" => new Chain(new PitchShift(+4, sr), new RingMod(30, sr)),
         "Cyborg" => new Chain(new RingMod(120, sr), new Drive(1.8), new HighPass(300, sr)),
+        "Android" => new Chain(new RingMod(250, sr), new LowPass(3500, sr)),
+        "Glitch" => new Chain(new RingMod(400, sr), new Tremolo(12.0, 0.8, sr)),
+        "Alien" => new Chain(new PitchShift(+4, sr), new RingMod(30, sr)),
         "Ghost" => new Chain(new PitchShift(-3, sr), new Vibrato(6, 2.5, sr), new Echo(220, 0.5f, 0.6f, sr)),
-        "Baby" => new PitchShift(+9, sr),
-        "Echo" => new Echo(260, 0.45f, 0.6f, sr),
-        "Cave" => new Echo(180, 0.55f, 0.7f, sr),
-        "Cathedral" => new Chain(new Echo(320, 0.6f, 0.6f, sr), new Echo(520, 0.4f, 0.4f, sr)),
+        "Space Echo" => new Chain(new Vibrato(0.8, 2.0, sr), new Echo(400, 0.6f, 0.6f, sr)),
         "Telephone" => new Chain(new HighPass(400, sr), new LowPass(3200, sr), new Drive(1.4)),
         "Walkie-talkie" => new Chain(new HighPass(500, sr), new LowPass(2800, sr), new Drive(4.0), new Gain(0.8f)),
         "Radio" => new Chain(new HighPass(250, sr), new LowPass(4500, sr), new Drive(1.6)),
+        "Megaphone" => new Chain(new Drive(6.0), new Gain(0.8f)),
         "Underwater" => new Chain(new LowPass(700, sr), new Vibrato(1.2, 3.0, sr)),
+        "Cave" => new Echo(180, 0.55f, 0.7f, sr),
+        "Cathedral" => new Chain(new Echo(320, 0.6f, 0.6f, sr), new Echo(520, 0.4f, 0.4f, sr)),
+        "Stadium" => new Chain(new Echo(500, 0.5f, 0.5f, sr), new Echo(900, 0.35f, 0.4f, sr)),
         "Chorus" => new Chorus(sr),
         "Vibrato" => new Vibrato(5.5, 2.0, sr),
         "Tremolo" => new Tremolo(6.0, 0.7, sr),
         "Drunk" => new Vibrato(1.5, 6.0, sr),
-        "Megaphone" => new Chain(new Drive(6.0), new Gain(0.8f)),
         "Fan (Leslie)" => new Chain(new Tremolo(5.0, 0.5, sr), new Vibrato(5.0, 1.2, sr)),
         _ => null,
     };
 
-    /// <summary>NoiseGate for strength 0..1, or null at/near 0.</summary>
-    public static IEffect? BuildNoiseGate(double strength, int sr)
-        => strength <= 0.02 ? null : new NoiseGate(strength, sr);
+    public static readonly string[] NoiseEngines =
+        { "Spectral (built-in)", "RNNoise (best, needs DLL)" };
+
+    /// <summary>
+    /// Build the noise suppressor for the chosen engine, or null at/near 0.
+    /// RNNoise falls back to spectral if rnnoise.dll isn't present.
+    /// </summary>
+    public static IEffect? BuildNoiseSuppressor(double strength, int sr, string? engine)
+    {
+        if (strength <= 0.02) return null;
+        if (engine != null && engine.StartsWith("RNNoise"))
+        {
+            try { return new RnnoiseDenoiser(); }
+            catch { /* no DLL / load failed — use the built-in engine instead */ }
+        }
+        return new SpectralDenoise(sr, strength);
+    }
 
     /// <summary>Scale int16 PCM by a linear volume in place (1.0 = unchanged).</summary>
     public static byte[] ApplyVolume(byte[] pcm, double volume)

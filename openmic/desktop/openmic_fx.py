@@ -263,6 +263,87 @@ class Chorus(Effect):
         return out.astype(np.float32)
 
 
+class SpectralDenoise(Effect):
+    """Frequency-domain noise suppression (spectral gating / Wiener-style).
+
+    Unlike a broadband gate, this estimates the noise level *per frequency bin*
+    and only attenuates bins dominated by noise, so steady background noise
+    (fans, hiss, hum) is removed while the speech bands pass through at full
+    level. strength 0..1 sets how aggressive the subtraction is.
+
+    Streaming overlap-add STFT: sqrt-Hann window, 50% overlap, so it runs frame
+    by frame on the live stream. Adds ~one window (~32 ms) of latency. The noise
+    profile adapts on its own (no noise sample needed): each bin tracks the quiet
+    passages fast and the loud ones slowly.
+    """
+    def __init__(self, sample_rate, strength, n_fft=512):
+        self.n = n_fft
+        self.hop = n_fft // 2
+        w = np.sqrt(np.hanning(n_fft).astype(np.float32) + 1e-8)
+        self.win = w
+        self.strength = max(0.0, min(1.0, strength))
+        self.oversub = 1.0 + 2.0 * self.strength   # how hard to subtract noise
+        self.floor = 0.06 + 0.10 * (1.0 - self.strength)  # min bin gain (avoids total mute)
+        self.inbuf = np.zeros(0, dtype=np.float32)
+        self.acc = np.zeros(n_fft, dtype=np.float32)   # overlap-add accumulator
+        self.ready = np.zeros(0, dtype=np.float32)     # finalized output samples
+        self.noise = None                               # per-bin noise power
+        self.emin = None                                # running frame-energy floor (VAD)
+        self.prev_gain = np.ones(n_fft // 2 + 1, dtype=np.float32)
+
+    def reset(self):
+        self.inbuf = np.zeros(0, dtype=np.float32)
+        self.acc = np.zeros(self.n, dtype=np.float32)
+        self.ready = np.zeros(0, dtype=np.float32)
+        self.noise = None
+        self.emin = None
+        self.prev_gain = np.ones(self.n // 2 + 1, dtype=np.float32)
+
+    def process(self, x):
+        self.inbuf = np.concatenate((self.inbuf, x))
+        while len(self.inbuf) >= self.n:
+            frame = self.inbuf[:self.n] * self.win
+            spec = np.fft.rfft(frame)
+            mag2 = (spec.real * spec.real + spec.imag * spec.imag).astype(np.float32)
+            # Energy VAD: update the noise profile only on non-speech frames, so
+            # the voice never gets added to the noise estimate (which was what
+            # made it "block your speaking"). The per-bin profile is frozen while
+            # you talk and refreshed in the gaps.
+            e = float(mag2.sum())
+            if self.emin is None:
+                self.emin = e
+            elif e < self.emin:
+                self.emin = e                       # follow the floor down instantly
+            else:
+                self.emin *= 1.0015                 # leak up slowly (~9%/s), not during speech
+            is_speech = e > self.emin * 3.0 + 1e-9
+            if self.noise is None:
+                self.noise = mag2.copy() + 1e-9
+            elif not is_speech:
+                self.noise = (0.9 * self.noise + 0.1 * mag2).astype(np.float32)
+            # (during speech the noise estimate is left frozen)
+            # spectral-subtraction gain, clamped to a floor (prevents musical noise/muting)
+            gain = (mag2 - self.oversub * self.noise) / (mag2 + 1e-9)
+            gain = np.clip(gain, self.floor, 1.0).astype(np.float32)
+            # smooth the mask over time to reduce warble
+            gain = (0.6 * gain + 0.4 * self.prev_gain).astype(np.float32)
+            self.prev_gain = gain
+            out_frame = np.fft.irfft(spec * gain).astype(np.float32) * self.win
+            self.acc += out_frame
+            self.ready = np.concatenate((self.ready, self.acc[:self.hop].copy()))
+            self.acc = np.concatenate((self.acc[self.hop:], np.zeros(self.hop, dtype=np.float32)))
+            self.inbuf = self.inbuf[self.hop:]
+        # return exactly len(x) samples (zero-padded during the initial fill)
+        n = len(x)
+        if len(self.ready) >= n:
+            out = self.ready[:n]
+            self.ready = self.ready[n:]
+        else:
+            out = np.concatenate((np.zeros(n - len(self.ready), dtype=np.float32), self.ready))
+            self.ready = np.zeros(0, dtype=np.float32)
+        return out.astype(np.float32)
+
+
 class NoiseGate(Effect):
     """Adjustable noise suppression: a smoothed downward expander/gate.
     strength 0..1 — higher cuts quieter sounds harder. Cheap, dependency-free
@@ -305,10 +386,14 @@ class Chain(Effect):
 
 # Preset names shown in the UI. build_effect(name, sample_rate) -> Effect | None
 PRESETS = [
-    "None", "Chipmunk", "Helium", "Deep voice", "Giant", "Monster", "Demon",
-    "Robot", "Alien", "Cyborg", "Ghost", "Baby", "Echo", "Cave", "Cathedral",
-    "Telephone", "Walkie-talkie", "Radio", "Underwater", "Chorus", "Vibrato",
-    "Tremolo", "Drunk", "Megaphone", "Fan (Leslie)",
+    "None",
+    "Chipmunk", "Helium", "Squirrel", "Child",
+    "Deep voice", "Giant", "Monster", "Demon", "Villain",
+    "Robot", "Cyborg", "Android", "Glitch",
+    "Alien", "Ghost", "Space Echo",
+    "Telephone", "Walkie-talkie", "Radio", "Megaphone", "Underwater",
+    "Cave", "Cathedral", "Stadium",
+    "Chorus", "Vibrato", "Tremolo", "Drunk", "Fan (Leslie)",
 ]
 
 
@@ -324,29 +409,40 @@ def process_pcm16(effect, pcm_bytes):
 
 def _build(name, sr):
     match name:
+        # higher-pitched
         case "Chipmunk":      return PitchShift(+7, sr)
         case "Helium":        return PitchShift(+12, sr)
-        case "Deep voice":    return PitchShift(-6, sr)
-        case "Giant":         return Chain([PitchShift(-10, sr), Gain(1.2)])
-        case "Monster":       return Chain([PitchShift(-9, sr), Drive(2.5)])
+        case "Squirrel":      return Chain([PitchShift(+9, sr), Tremolo(9.0, 0.4, sr)])
+        case "Child":         return Chain([PitchShift(+5, sr), HighPass(300, sr)])
+        # deeper / scarier (each distinct in character, not just pitch)
+        case "Deep voice":    return PitchShift(-5, sr)
+        case "Giant":         return Chain([PitchShift(-10, sr), LowPass(1500, sr), Echo(300, 0.5, 0.4, sr)])
+        case "Monster":       return Chain([PitchShift(-7, sr), Drive(3.0), RingMod(40, sr)])
         case "Demon":         return Chain([PitchShift(-12, sr), Drive(3.5), Echo(140, 0.3, 0.4, sr)])
+        case "Villain":       return Chain([PitchShift(-4, sr), Echo(320, 0.55, 0.5, sr), Drive(1.4)])
+        # robotic / metallic
         case "Robot":         return Chain([RingMod(70, sr), Gain(1.4)])
-        case "Alien":         return Chain([PitchShift(+4, sr), RingMod(30, sr)])
         case "Cyborg":        return Chain([RingMod(120, sr), Drive(1.8), HighPass(300, sr)])
-        case "Ghost":         return Chain([PitchShift(-3, sr), Vibrato(6, 2.5, sr), Echo(220, 0.5, 0.6, sr)])
-        case "Baby":          return PitchShift(+9, sr)
-        case "Echo":          return Echo(260, 0.45, 0.6, sr)
-        case "Cave":          return Echo(180, 0.55, 0.7, sr)
-        case "Cathedral":     return Chain([Echo(320, 0.6, 0.6, sr), Echo(520, 0.4, 0.4, sr)])
+        case "Android":       return Chain([RingMod(250, sr), LowPass(3500, sr)])
+        case "Glitch":        return Chain([RingMod(400, sr), Tremolo(12.0, 0.8, sr)])
+        # alien / ghostly
+        case "Alien":         return Chain([PitchShift(+4, sr), RingMod(30, sr)])
+        case "Ghost":         return Chain([PitchShift(-3, sr), Vibrato(6.0, 2.5, sr), Echo(220, 0.5, 0.6, sr)])
+        case "Space Echo":    return Chain([Vibrato(0.8, 2.0, sr), Echo(400, 0.6, 0.6, sr)])
+        # EQ / environment
         case "Telephone":     return Chain([HighPass(400, sr), LowPass(3200, sr), Drive(1.4)])
         case "Walkie-talkie": return Chain([HighPass(500, sr), LowPass(2800, sr), Drive(4.0), Gain(0.8)])
         case "Radio":         return Chain([HighPass(250, sr), LowPass(4500, sr), Drive(1.6)])
+        case "Megaphone":     return Chain([Drive(6.0), Gain(0.8)])
         case "Underwater":    return Chain([LowPass(700, sr), Vibrato(1.2, 3.0, sr)])
+        case "Cave":          return Echo(180, 0.55, 0.7, sr)
+        case "Cathedral":     return Chain([Echo(320, 0.6, 0.6, sr), Echo(520, 0.4, 0.4, sr)])
+        case "Stadium":       return Chain([Echo(500, 0.5, 0.5, sr), Echo(900, 0.35, 0.4, sr)])
+        # modulation
         case "Chorus":        return Chorus(sr)
         case "Vibrato":       return Vibrato(5.5, 2.0, sr)
         case "Tremolo":       return Tremolo(6.0, 0.7, sr)
         case "Drunk":         return Vibrato(1.5, 6.0, sr)
-        case "Megaphone":     return Chain([Drive(6.0), Gain(0.8)])
         case "Fan (Leslie)":  return Chain([Tremolo(5.0, 0.5, sr), Vibrato(5.0, 1.2, sr)])
         case _:               return None
 
@@ -359,10 +455,14 @@ def build_effect(name, sample_rate):
 
 
 def build_noise_gate(strength, sample_rate):
-    """NoiseGate for strength in 0..1, or None at/near 0."""
+    """Noise suppressor for strength 0..1, or None at/near 0.
+
+    Returns the frequency-domain SpectralDenoise (keeps speech, removes steady
+    noise per band) rather than the old broadband gate.
+    """
     if not HAVE_NUMPY or strength <= 0.02:
         return None
-    return NoiseGate(strength, sample_rate)
+    return SpectralDenoise(sample_rate, strength)
 
 
 def apply_volume(pcm_bytes, volume):

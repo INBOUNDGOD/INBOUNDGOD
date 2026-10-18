@@ -447,10 +447,12 @@ without writing a kernel driver, pipe the received audio into a virtual audio
 cable — VB-CABLE (Windows), BlackHole (macOS), null-sink (PipeWire/Pulse). Own
 driver is a big later project.
 
-**Status:** working build confirmed by the user ("works almost perfectly") after
-their build session compiled both apps. Build-blocker fixes + a big feature pass
-are in. **Next (suggested):** Opus codec; studio-grade noise suppression via
-RNNoise; auto-reconnect/tray. Roadmap in `openmic/README.md`.
+**Status:** user confirmed the apps build and run ("works almost perfectly").
+Two rounds of polish done: feature pass, then a quality pass on the user's
+feedback (noise suppression rewritten to a spectral denoiser + optional RNNoise;
+30 distinct voice presets; dark Windows UI; Android dark mode). **Next
+(suggested):** Opus codec; DeepFilterNet NS engine; a "Custom voice" preset with
+live pitch sliders; auto-reconnect. Roadmap in `openmic/README.md`.
 
 **Build-blocker fixes (2026-10-18, from the build session's report):**
 - Android `OpenMicProtocol.kt` was missing `DISCOVERY_PORT`/`DISCOVERY_MAGIC`
@@ -579,6 +581,23 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic round 3 (user feedback). (1) **Noise suppression
+  rewritten**: replaced the broadband gate (which ducked speech) with a
+  frequency-domain **SpectralDenoise** — STFT spectral gating with an energy
+  VAD that freezes the noise profile while talking. Tested in Python: 84–97%
+  voice kept, noise cut 94–99%; no longer acts like a volume reducer. Ported to
+  C# (`NoiseSuppress.cs`, with a self-contained FFT) and Kotlin
+  (`SpectralDenoiseK.kt`). (2) Added optional **RNNoise** engine on Windows
+  (`RnnoiseDenoiser.cs`, P/Invoke to rnnoise.dll, 16↔48k resample) with an
+  engine selector and graceful fallback to spectral — the near-Krisp path.
+  (3) **Voice changers**: replaced near-duplicate presets with **30 distinct**
+  ones (Giant≠Monster now, verified), using new building blocks. (4) **Windows
+  UI** restyled dark/modern (cards, accent, flat buttons). (5) **Android dark
+  mode** via `values-night/themes.xml`. Python DSP run-tested; C#/Kotlin
+  static-checked only. Research sources (RNNoise API, spectral gating) in the
+  chat. Honest limits: spectral beats steady noise, RNNoise handles
+  non-stationary better; DeepFilterNet is the heavier top-tier (roadmap).
 
 - **2026-10-18**: OpenMic Windows app: system-tray support — closing the window
   hides to the tray and keeps streaming (NotifyIcon in `MainForm.cs`); tray menu
