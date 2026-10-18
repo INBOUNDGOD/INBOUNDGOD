@@ -7,9 +7,9 @@ public sealed class MainForm : Form
 {
     // --- dark palette ---
     private static readonly Color Bg = Color.FromArgb(30, 31, 34);
-    private static readonly Color Card = Color.FromArgb(43, 45, 49);
+    private static readonly Color CardColor = Color.FromArgb(43, 45, 49);
     private static readonly Color Border = Color.FromArgb(58, 60, 66);
-    private static readonly Color Text = Color.FromArgb(227, 229, 232);
+    private static readonly Color TextColor = Color.FromArgb(227, 229, 232);
     private static readonly Color SubText = Color.FromArgb(168, 171, 178);
     private static readonly Color Accent = Color.FromArgb(88, 101, 242);
     private static readonly Color Green = Color.FromArgb(59, 165, 93);
@@ -44,7 +44,7 @@ public sealed class MainForm : Form
         Text = "OpenMic";
         ClientSize = new Size(470, 650);
         BackColor = Bg;
-        ForeColor = Text;
+        ForeColor = TextColor;
         Font = new Font("Segoe UI", 9.5F);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -81,11 +81,11 @@ public sealed class MainForm : Form
     { Text = t.ToUpperInvariant(), ForeColor = Accent, AutoSize = true, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold) };
 
     private Label Lbl(string t, bool sub = false) => new()
-    { Text = t, ForeColor = sub ? SubText : Text, AutoSize = true, BackColor = Color.Transparent };
+    { Text = t, ForeColor = sub ? SubText : TextColor, AutoSize = true, BackColor = Color.Transparent };
 
     private Panel Card(int x, int y, int w, int h)
     {
-        var p = new Panel { Left = x, Top = y, Width = w, Height = h, BackColor = Card };
+        var p = new Panel { Left = x, Top = y, Width = w, Height = h, BackColor = CardColor };
         p.Paint += (s, e) =>
         {
             using var pen = new Pen(Border);
@@ -108,10 +108,10 @@ public sealed class MainForm : Form
     private void StyleInput(Control c)
     {
         c.BackColor = Color.FromArgb(54, 57, 63);
-        c.ForeColor = Text;
+        c.ForeColor = TextColor;
         if (c is ComboBox cb) cb.FlatStyle = FlatStyle.Flat;
         if (c is TextBox tb) tb.BorderStyle = BorderStyle.FixedSingle;
-        if (c is TrackBar tr) tr.BackColor = Card;
+        if (c is TrackBar tr) tr.BackColor = CardColor;
     }
 
     private void BuildUi()

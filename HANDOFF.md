@@ -582,6 +582,13 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-18**: OpenMic Windows build fix (from build session): the dark-UI
+  palette had two name collisions in `MainForm.cs` — `Color Card` vs the
+  `Card()` panel helper, and `Color Text` shadowing `Form.Text`. Renamed those
+  two fields to `CardColor`/`TextColor` (other palette names don't collide).
+  Bumped versions for the release: Windows csproj 1.0.0→1.1.0; Android
+  versionCode 1→2, versionName 1.0→1.1.
+
 - **2026-10-18**: OpenMic round 3 (user feedback). (1) **Noise suppression
   rewritten**: replaced the broadband gate (which ducked speech) with a
   frequency-domain **SpectralDenoise** — STFT spectral gating with an energy
