@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark theme, selected automatically when the phone is in dark mode.
-         Same style name as values/themes.xml so the system picks this at night. -->
-    <style name="Theme.OpenMic" parent="android:Theme.Material.NoActionBar" />
+    <!-- Dark theme, selected automatically when the phone is in dark mode. -->
+    <style name="Theme.OpenMic" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorAccent">@color/om_accent</item>
+        <item name="android:windowBackground">@color/om_bg</item>
+        <item name="android:colorBackground">@color/om_bg</item>
+        <item name="android:textColorPrimary">@color/om_ink</item>
+    </style>
 </resources>

@@ -264,40 +264,43 @@ class Chorus(Effect):
 
 
 class SpectralDenoise(Effect):
-    """Frequency-domain noise suppression (spectral gating / Wiener-style).
+    """Frequency-domain noise suppression — decision-directed Wiener filter.
 
-    Unlike a broadband gate, this estimates the noise level *per frequency bin*
-    and only attenuates bins dominated by noise, so steady background noise
-    (fans, hiss, hum) is removed while the speech bands pass through at full
-    level. strength 0..1 sets how aggressive the subtraction is.
+    Estimates the noise power *per frequency bin* with minimum statistics (works
+    while you keep talking, no voice-activity gate needed), then applies a Wiener
+    gain driven by a decision-directed a-priori-SNR estimate (Ephraim–Malah
+    style). Speech-dominated bins keep a gain near 1 no matter how high the
+    strength, so cranking it no longer chews up the voice; noise-only bins are
+    attenuated to a strength-dependent floor. Removes *steady* noise (fan, hiss,
+    hum) well; transient noise that overlaps speech (keyboard clacks) needs the
+    RNNoise engine — classical single-channel DSP can't separate it.
 
-    Streaming overlap-add STFT: sqrt-Hann window, 50% overlap, so it runs frame
-    by frame on the live stream. Adds ~one window (~32 ms) of latency. The noise
-    profile adapts on its own (no noise sample needed): each bin tracks the quiet
-    passages fast and the loud ones slowly.
+    Streaming overlap-add STFT (sqrt-Hann, 50% overlap, ~32 ms latency).
     """
     def __init__(self, sample_rate, strength, n_fft=512):
         self.n = n_fft
         self.hop = n_fft // 2
-        w = np.sqrt(np.hanning(n_fft).astype(np.float32) + 1e-8)
-        self.win = w
+        self.win = np.sqrt(np.hanning(n_fft).astype(np.float32) + 1e-8)
         self.strength = max(0.0, min(1.0, strength))
-        self.oversub = 1.0 + 2.0 * self.strength   # how hard to subtract noise
-        self.floor = 0.06 + 0.10 * (1.0 - self.strength)  # min bin gain (avoids total mute)
+        self.bias = 1.5 + 1.5 * self.strength           # min->mean noise compensation / aggressiveness
+        self.gmin = 0.12 - 0.09 * self.strength         # floor for noise-only bins
+        self.alpha = 0.98                               # decision-directed smoothing
+        bins = n_fft // 2 + 1
         self.inbuf = np.zeros(0, dtype=np.float32)
-        self.acc = np.zeros(n_fft, dtype=np.float32)   # overlap-add accumulator
-        self.ready = np.zeros(0, dtype=np.float32)     # finalized output samples
-        self.noise = None                               # per-bin noise power
-        self.emin = None                                # running frame-energy floor (VAD)
-        self.prev_gain = np.ones(n_fft // 2 + 1, dtype=np.float32)
+        self.acc = np.zeros(n_fft, dtype=np.float32)
+        self.ready = np.zeros(0, dtype=np.float32)
+        self.noisemin = None                            # per-bin running minimum (noise floor)
+        self.prev_g = np.ones(bins, dtype=np.float32)   # previous Wiener gain
+        self.prev_gamma = np.ones(bins, dtype=np.float32)  # previous a-posteriori SNR
 
     def reset(self):
+        bins = self.n // 2 + 1
         self.inbuf = np.zeros(0, dtype=np.float32)
         self.acc = np.zeros(self.n, dtype=np.float32)
         self.ready = np.zeros(0, dtype=np.float32)
-        self.noise = None
-        self.emin = None
-        self.prev_gain = np.ones(self.n // 2 + 1, dtype=np.float32)
+        self.noisemin = None
+        self.prev_g = np.ones(bins, dtype=np.float32)
+        self.prev_gamma = np.ones(bins, dtype=np.float32)
 
     def process(self, x):
         self.inbuf = np.concatenate((self.inbuf, x))
@@ -305,30 +308,29 @@ class SpectralDenoise(Effect):
             frame = self.inbuf[:self.n] * self.win
             spec = np.fft.rfft(frame)
             mag2 = (spec.real * spec.real + spec.imag * spec.imag).astype(np.float32)
-            # Energy VAD: update the noise profile only on non-speech frames, so
-            # the voice never gets added to the noise estimate (which was what
-            # made it "block your speaking"). The per-bin profile is frozen while
-            # you talk and refreshed in the gaps.
-            e = float(mag2.sum())
-            if self.emin is None:
-                self.emin = e
-            elif e < self.emin:
-                self.emin = e                       # follow the floor down instantly
+            # Minimum-statistics noise floor per bin: drop to the floor fast,
+            # leak up slowly. Works during continuous speech (each bin dips to
+            # the noise level between harmonics/phonemes) and never nukes the
+            # voice on a speech cold-start.
+            if self.noisemin is None:
+                self.noisemin = mag2.copy() + 1e-9
             else:
-                self.emin *= 1.0015                 # leak up slowly (~9%/s), not during speech
-            is_speech = e > self.emin * 3.0 + 1e-9
-            if self.noise is None:
-                self.noise = mag2.copy() + 1e-9
-            elif not is_speech:
-                self.noise = (0.9 * self.noise + 0.1 * mag2).astype(np.float32)
-            # (during speech the noise estimate is left frozen)
-            # spectral-subtraction gain, clamped to a floor (prevents musical noise/muting)
-            gain = (mag2 - self.oversub * self.noise) / (mag2 + 1e-9)
-            gain = np.clip(gain, self.floor, 1.0).astype(np.float32)
-            # smooth the mask over time to reduce warble
-            gain = (0.6 * gain + 0.4 * self.prev_gain).astype(np.float32)
-            self.prev_gain = gain
-            out_frame = np.fft.irfft(spec * gain).astype(np.float32) * self.win
+                lower = mag2 < self.noisemin
+                self.noisemin = np.where(
+                    lower, mag2, self.noisemin + 0.002 * (mag2 - self.noisemin)
+                ).astype(np.float32)
+            noise = self.noisemin * self.bias + 1e-12
+            # decision-directed Wiener gain: speech-dominant bins keep gain ~1 at
+            # any strength (fixes "max blocks my voice"); noise bins drop to gmin.
+            gamma = np.minimum(mag2 / noise, 1e3)                       # a-posteriori SNR
+            xi = self.alpha * (self.prev_g ** 2) * self.prev_gamma \
+                + (1.0 - self.alpha) * np.maximum(gamma - 1.0, 0.0)     # a-priori SNR
+            xi = np.maximum(xi, 1e-3)
+            g = (xi / (1.0 + xi)).astype(np.float32)                    # Wiener
+            g = np.maximum(g, self.gmin).astype(np.float32)
+            self.prev_g = g
+            self.prev_gamma = gamma.astype(np.float32)
+            out_frame = np.fft.irfft(spec * g).astype(np.float32) * self.win
             self.acc += out_frame
             self.ready = np.concatenate((self.ready, self.acc[:self.hop].copy()))
             self.acc = np.concatenate((self.acc[self.hop:], np.zeros(self.hop, dtype=np.float32)))

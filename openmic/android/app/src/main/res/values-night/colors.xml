@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="om_bg">#15171C</color>
+    <color name="om_card">#1E2127</color>
+    <color name="om_accent">#8B93F8</color>
+    <color name="om_ink">#ECEEF2</color>
+    <color name="om_subink">#9BA1AD</color>
+    <color name="om_border">#2C3038</color>
+    <color name="om_onaccent">#15171C</color>
+    <color name="om_mute">#5A6069</color>
+</resources>

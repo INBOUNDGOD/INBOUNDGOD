@@ -582,6 +582,24 @@ and separately clarified they confused Opus-the-codec with Opus-the-model.
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
 
+- **2026-10-18**: OpenMic round 4 (user feedback). (1) **Noise suppression**
+  reworked again to a **decision-directed Wiener filter** (Ephraim–Malah style)
+  with minimum-statistics per-bin noise tracking — speech-dominant bins keep
+  gain ~1 at ANY strength, fixing "max blocks my voice"; ported to C#
+  (`NoiseSuppress.cs`) and Kotlin (`SpectralDenoiseK.kt`). Honest limit set with
+  the user: keyboard-while-talking is transient noise overlapping speech,
+  classical DSP can't remove it — that needs RNNoise (the DLL). (2) **Windows UI
+  fully rebuilt**: header (top) + status bar (bottom) + a scrolling FlowLayout
+  card stack — Start/Stop are inside a card so they can no longer overlap the
+  status text (the reported bug); switched to a clean LIGHT scheme (dark + native
+  combos looked bad). (3) **Android UI redesigned**: header + card_bg cards,
+  accent-tinted controls, day/night colors (`values[/-night]/colors.xml`,
+  `drawable/card_bg.xml`, themes set colorAccent/windowBackground). Layout IDs
+  unchanged so MainActivity is untouched. (4) Versions bumped: Windows 1.1.0→
+  1.2.0, Android versionCode 2→3 / 1.1→1.2. Python NS run-tested (worst-case
+  steady voice: ~48–63% kept, 33–52% noise remaining, scales with strength, no
+  total blocking — real speech retains more); C#/Kotlin static-checked.
+
 - **2026-10-18**: OpenMic Windows build fix (from build session): the dark-UI
   palette had two name collisions in `MainForm.cs` — `Color Card` vs the
   `Card()` panel helper, and `Color Text` shadowing `Form.Text`. Renamed those

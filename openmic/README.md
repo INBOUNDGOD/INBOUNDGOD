@@ -142,8 +142,9 @@ Done:
       for near-Krisp quality (drop in `rnnoise.dll`).
 - [x] **Voice changer** — 30 distinct presets (no more copy-paste duplicates)
       with a search box.
-- [x] **Dark UI** — Windows app restyled (dark, cards, accent); Android follows
-      the system light/dark setting.
+- [x] **Redesigned UI** — Windows app rebuilt with a header + scrolling card
+      layout (no overlapping controls) in a clean light scheme; Android app
+      redesigned with cards + header and automatic light/dark.
 - [x] **Mic-release on calls** — the phone yields the mic to a call/other app
       and resumes after (toggle in the app).
 - [x] **USB direct mode** — `adb forward`, lower latency, no Wi-Fi jitter.
@@ -165,11 +166,15 @@ Next:
 
 ### A note on noise suppression quality
 Three tiers, best-effort free:
-1. **Spectral** (built in, default) — removes steady noise (fans, hiss, hum)
-   well and keeps your voice. Not magic against sudden non-steady noise
-   (keyboard, clicks).
-2. **RNNoise** (optional, Windows) — an ML denoiser, much better on
-   non-stationary noise; roughly Discord-grade. Needs `rnnoise.dll`.
+1. **Spectral** (built in, default) — a decision-directed Wiener filter with
+   minimum-statistics noise tracking. Removes **steady** noise (fans, hiss, hum)
+   and keeps your voice even at max strength (high strength no longer blocks the
+   voice). **It cannot remove keyboard clicks while you talk** — a transient that
+   overlaps speech isn't in the steady noise profile, so classical single-channel
+   DSP can't separate it. That's an inherent limit, not a tuning bug.
+2. **RNNoise** (optional, Windows) — an ML denoiser that *does* handle
+   keyboard/clicks and other non-stationary noise; roughly Discord-grade. This
+   is the one to use for gaming + mechanical keyboard. Needs `rnnoise.dll`.
 3. **DeepFilterNet** (roadmap) — the closest free thing to Krisp, heavier.
 - [ ] **UDP audio** for lower latency (control stays on TCP).
 - [ ] **Bluetooth** transport (RFCOMM).

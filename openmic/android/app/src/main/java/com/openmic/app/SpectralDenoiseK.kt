@@ -15,20 +15,21 @@ class SpectralDenoiseK(sampleRate: Int, strength: Float) {
     private val n = 512
     private val hop = 256
     private val win = FloatArray(n) { sqrt(0.5 - 0.5 * cos(2.0 * Math.PI * it / (n - 1)) + 1e-8).toFloat() }
-    private val oversub: Double
-    private val floor: Double
+    private val bias: Double
+    private val gmin: Double
+    private val alpha = 0.98   // decision-directed smoothing
 
     private var inbuf = FloatArray(0)
     private val acc = FloatArray(n)
     private var ready = FloatArray(0)
-    private var noise: DoubleArray? = null
-    private var emin = Double.NaN
-    private val prevGain = DoubleArray(n) { 1.0 }
+    private var noiseMin: DoubleArray? = null
+    private val prevG = DoubleArray(n) { 1.0 }
+    private val prevGamma = DoubleArray(n) { 1.0 }
 
     init {
         val s = strength.coerceIn(0f, 1f).toDouble()
-        oversub = 1.0 + 2.0 * s
-        floor = 0.06 + 0.10 * (1.0 - s)
+        bias = 1.5 + 1.5 * s
+        gmin = 0.12 - 0.09 * s
     }
 
     fun processShorts(input: ShortArray): ShortArray {
@@ -42,27 +43,30 @@ class SpectralDenoiseK(sampleRate: Int, strength: Float) {
             fft(re, im, false)
 
             val mag2 = DoubleArray(n)
-            var e = 0.0
-            for (i in 0 until n) { mag2[i] = re[i] * re[i] + im[i] * im[i]; e += mag2[i] }
+            for (i in 0 until n) mag2[i] = re[i] * re[i] + im[i] * im[i]
 
-            if (emin.isNaN()) emin = e
-            else if (e < emin) emin = e
-            else emin *= 1.0015
-            val isSpeech = e > emin * 3.0 + 1e-9
-
-            val nz = noise
-            if (nz == null) {
-                noise = DoubleArray(n) { mag2[it] + 1e-9 }
-            } else if (!isSpeech) {
-                for (i in 0 until n) nz[i] = 0.9 * nz[i] + 0.1 * mag2[i]
+            // minimum-statistics noise floor per bin (drop fast, leak up slowly)
+            val nm = noiseMin
+            if (nm == null) {
+                noiseMin = DoubleArray(n) { mag2[it] + 1e-9 }
+            } else {
+                for (i in 0 until n) {
+                    nm[i] = if (mag2[i] < nm[i]) mag2[i] else nm[i] + 0.002 * (mag2[i] - nm[i])
+                }
             }
-            val nz2 = noise!!
+            val nmin = noiseMin!!
 
+            // decision-directed Wiener gain: speech bins keep ~1 at any strength
             for (i in 0 until n) {
-                var g = (mag2[i] - oversub * nz2[i]) / (mag2[i] + 1e-9)
-                g = g.coerceIn(floor, 1.0)
-                g = 0.6 * g + 0.4 * prevGain[i]
-                prevGain[i] = g
+                val noise = nmin[i] * bias + 1e-12
+                val gamma = Math.min(mag2[i] / noise, 1e3)
+                var xi = alpha * prevG[i] * prevG[i] * prevGamma[i] +
+                    (1.0 - alpha) * Math.max(gamma - 1.0, 0.0)
+                if (xi < 1e-3) xi = 1e-3
+                var g = xi / (1.0 + xi)
+                if (g < gmin) g = gmin
+                prevG[i] = g
+                prevGamma[i] = gamma
                 re[i] *= g; im[i] *= g
             }
 

@@ -49,27 +49,29 @@ public sealed class SpectralDenoise : IEffect
     private readonly int _n = 512;
     private readonly int _hop = 256;
     private readonly float[] _win;
-    private readonly double _oversub;
-    private readonly double _floor;
+    private readonly double _bias;
+    private readonly double _gmin;
+    private const double Alpha = 0.98;   // decision-directed smoothing
 
     private float[] _inbuf = Array.Empty<float>();
     private readonly float[] _acc;
     private float[] _ready = Array.Empty<float>();
-    private double[]? _noise;
-    private double? _emin;
-    private readonly double[] _prevGain;
+    private double[]? _noiseMin;         // per-bin running minimum (noise floor)
+    private readonly double[] _prevG;    // previous Wiener gain
+    private readonly double[] _prevGamma;
 
     public SpectralDenoise(int sampleRate, double strength)
     {
         strength = Math.Clamp(strength, 0, 1);
-        _oversub = 1.0 + 2.0 * strength;
-        _floor = 0.06 + 0.10 * (1.0 - strength);
+        _bias = 1.5 + 1.5 * strength;
+        _gmin = 0.12 - 0.09 * strength;
         _win = new float[_n];
         for (int i = 0; i < _n; i++)
             _win[i] = (float)Math.Sqrt(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / (_n - 1)) + 1e-8);
         _acc = new float[_n];
-        _prevGain = new double[_n];
-        for (int i = 0; i < _n; i++) _prevGain[i] = 1.0;
+        _prevG = new double[_n];
+        _prevGamma = new double[_n];
+        for (int i = 0; i < _n; i++) { _prevG[i] = 1.0; _prevGamma[i] = 1.0; }
     }
 
     public float[] Process(float[] x)
@@ -82,30 +84,35 @@ public sealed class SpectralDenoise : IEffect
             Fft.Transform(spec, false);
 
             var mag2 = new double[_n];
-            double e = 0;
-            for (int i = 0; i < _n; i++) { mag2[i] = spec[i].Real * spec[i].Real + spec[i].Imaginary * spec[i].Imaginary; e += mag2[i]; }
+            for (int i = 0; i < _n; i++) mag2[i] = spec[i].Real * spec[i].Real + spec[i].Imaginary * spec[i].Imaginary;
 
-            // energy VAD: only refresh the noise profile when not speaking
-            if (_emin == null) _emin = e;
-            else if (e < _emin) _emin = e;
-            else _emin *= 1.0015;
-            bool isSpeech = e > _emin * 3.0 + 1e-9;
-            if (_noise == null)
+            // minimum-statistics noise floor per bin (drop fast, leak up slowly)
+            if (_noiseMin == null)
             {
-                _noise = new double[_n];
-                for (int i = 0; i < _n; i++) _noise[i] = mag2[i] + 1e-9;
+                _noiseMin = new double[_n];
+                for (int i = 0; i < _n; i++) _noiseMin[i] = mag2[i] + 1e-9;
             }
-            else if (!isSpeech)
+            else
             {
-                for (int i = 0; i < _n; i++) _noise[i] = 0.9 * _noise[i] + 0.1 * mag2[i];
+                for (int i = 0; i < _n; i++)
+                    _noiseMin[i] = mag2[i] < _noiseMin[i]
+                        ? mag2[i]
+                        : _noiseMin[i] + 0.002 * (mag2[i] - _noiseMin[i]);
             }
 
+            // decision-directed Wiener gain: strong (speech) bins keep ~1 at any
+            // strength; noise bins drop to gmin.
             for (int i = 0; i < _n; i++)
             {
-                double g = (mag2[i] - _oversub * _noise[i]) / (mag2[i] + 1e-9);
-                g = Math.Clamp(g, _floor, 1.0);
-                g = 0.6 * g + 0.4 * _prevGain[i];
-                _prevGain[i] = g;
+                double noise = _noiseMin[i] * _bias + 1e-12;
+                double gamma = Math.Min(mag2[i] / noise, 1e3);
+                double xi = Alpha * _prevG[i] * _prevG[i] * _prevGamma[i]
+                            + (1.0 - Alpha) * Math.Max(gamma - 1.0, 0.0);
+                if (xi < 1e-3) xi = 1e-3;
+                double g = xi / (1.0 + xi);
+                if (g < _gmin) g = _gmin;
+                _prevG[i] = g;
+                _prevGamma[i] = gamma;
                 spec[i] *= g;
             }
 

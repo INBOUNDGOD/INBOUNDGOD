@@ -1,37 +1,38 @@
-using System.Drawing.Drawing2D;
 using System.Text.Json;
 
 namespace OpenMic;
 
 public sealed class MainForm : Form
 {
-    // --- dark palette ---
-    private static readonly Color Bg = Color.FromArgb(30, 31, 34);
-    private static readonly Color CardColor = Color.FromArgb(43, 45, 49);
-    private static readonly Color Border = Color.FromArgb(58, 60, 66);
-    private static readonly Color TextColor = Color.FromArgb(227, 229, 232);
-    private static readonly Color SubText = Color.FromArgb(168, 171, 178);
-    private static readonly Color Accent = Color.FromArgb(88, 101, 242);
-    private static readonly Color Green = Color.FromArgb(59, 165, 93);
-    private static readonly Color Red = Color.FromArgb(237, 66, 69);
+    // clean light palette (native controls render correctly on light)
+    private static readonly Color BgColor = Color.FromArgb(247, 248, 250);
+    private static readonly Color CardBg = Color.White;
+    private static readonly Color BorderColor = Color.FromArgb(225, 228, 232);
+    private static readonly Color Ink = Color.FromArgb(28, 30, 38);
+    private static readonly Color SubInk = Color.FromArgb(104, 110, 122);
+    private static readonly Color Accent = Color.FromArgb(79, 70, 229);   // indigo
+    private static readonly Color GreenColor = Color.FromArgb(34, 139, 69);
+    private static readonly Color RedColor = Color.FromArgb(200, 60, 64);
+
+    private const int CardW = 432;
 
     private readonly ListBox _phones = new();
-    private readonly Button _scan = new() { Text = "Scan Wi-Fi", Width = 110, Height = 30 };
-    private readonly TextBox _ip = new() { Width = 120 };
-    private readonly TextBox _pin = new() { Width = 64 };
+    private readonly Button _scan = new() { Text = "Scan Wi-Fi", Width = 104, Height = 28 };
+    private readonly TextBox _ip = new() { Width = 118 };
+    private readonly TextBox _pin = new() { Width = 60 };
     private readonly CheckBox _usb = new() { Text = "USB cable (adb) — lowest latency", AutoSize = true };
-    private readonly ComboBox _device = new() { Width = 360, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly ComboBox _device = new() { Width = CardW - 24, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly TrackBar _volume = new() { Minimum = 0, Maximum = 200, Value = 100, Width = 250, TickStyle = TickStyle.None };
     private readonly Label _volumeLbl = new() { AutoSize = true, Text = "100%" };
     private readonly TrackBar _noise = new() { Minimum = 0, Maximum = 100, Value = 0, Width = 250, TickStyle = TickStyle.None };
     private readonly Label _noiseLbl = new() { AutoSize = true, Text = "off" };
-    private readonly ComboBox _noiseEngine = new() { Width = 220, DropDownStyle = ComboBoxStyle.DropDownList };
-    private readonly TextBox _search = new() { Width = 120 };
-    private readonly ComboBox _effect = new() { Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
-    private readonly Button _start = new() { Text = "Start", Width = 110, Height = 34 };
-    private readonly Button _stop = new() { Text = "Stop", Width = 110, Height = 34, Enabled = false };
-    private readonly Label _status = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 46, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(16, 0, 16, 0) };
-    private readonly LinkLabel _update = new() { Text = "", AutoSize = true, Visible = false, LinkColor = Accent };
+    private readonly ComboBox _noiseEngine = new() { Width = CardW - 100, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly TextBox _search = new() { Width = 110 };
+    private readonly ComboBox _effect = new() { Width = CardW - 150, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly Button _start = new() { Text = "Start", Width = 130, Height = 36 };
+    private readonly Button _stop = new() { Text = "Stop", Width = 130, Height = 36, Enabled = false };
+    private readonly Label _update = new() { AutoSize = true, Visible = false, ForeColor = Accent, Cursor = Cursors.Hand, Font = new Font("Segoe UI", 9F, FontStyle.Underline) };
+    private readonly Label _status = new() { Dock = DockStyle.Bottom, Height = 40, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(16, 0, 16, 0), BackColor = Color.FromArgb(238, 240, 243), ForeColor = SubInk };
 
     private readonly NotifyIcon _tray = new();
     private bool _reallyExit;
@@ -42,9 +43,9 @@ public sealed class MainForm : Form
     public MainForm()
     {
         Text = "OpenMic";
-        ClientSize = new Size(470, 650);
-        BackColor = Bg;
-        ForeColor = TextColor;
+        ClientSize = new Size(480, 660);
+        BackColor = BgColor;
+        ForeColor = Ink;
         Font = new Font("Segoe UI", 9.5F);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -66,117 +67,116 @@ public sealed class MainForm : Form
         _search.TextChanged += (_, _) => FilterEffects();
         _volume.Scroll += (_, _) => { _volumeLbl.Text = _volume.Value + "%"; _rx?.SetVolume(_volume.Value / 100.0); };
         _noise.Scroll += (_, _) => { _noiseLbl.Text = _noise.Value == 0 ? "off" : _noise.Value + "%"; _rx?.SetNoise(_noise.Value / 100.0); };
-        _update.LinkClicked += (_, _) => _updater.ApplyAndRestart();
+        _update.Click += (_, _) => _updater.ApplyAndRestart();
         SetupTray();
         FormClosing += OnFormClosing;
 
-        SetStatus(AudioOutput.OutputDevices().Count == 0
-            ? "No output devices found."
+        SetStatus(AudioOutput.OutputDevices().Count == 0 ? "No output devices found."
             : "Ready. Scan for your phone, or type its IP.");
         Shown += async (_, _) => await CheckForUpdate();
     }
 
-    // ---- styled building blocks ----
-    private Label Header(string t) => new()
-    { Text = t.ToUpperInvariant(), ForeColor = Accent, AutoSize = true, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold) };
-
-    private Label Lbl(string t, bool sub = false) => new()
-    { Text = t, ForeColor = sub ? SubText : TextColor, AutoSize = true, BackColor = Color.Transparent };
-
-    private Panel Card(int x, int y, int w, int h)
+    private void BuildUi()
     {
-        var p = new Panel { Left = x, Top = y, Width = w, Height = h, BackColor = CardColor };
-        p.Paint += (s, e) =>
+        // scrolling card stack fills the space between the header and status bar,
+        // so controls can never overlap the status text again.
+        var content = new FlowLayoutPanel
         {
-            using var pen = new Pen(Border);
-            e.Graphics.DrawRectangle(pen, 0, 0, p.Width - 1, p.Height - 1);
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoScroll = true,
+            Padding = new Padding(16, 12, 16, 12),
+            BackColor = BgColor,
         };
-        Controls.Add(p);
+
+        content.Controls.Add(PhoneCard());
+        content.Controls.Add(OutputCard());
+        content.Controls.Add(VoiceCard());
+        content.Controls.Add(ButtonsCard());
+
+        var header = new Panel { Dock = DockStyle.Top, Height = 62, BackColor = Accent };
+        header.Controls.Add(new Label { Text = "OpenMic", ForeColor = Color.White, AutoSize = true, Location = new Point(16, 10), Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold) });
+        header.Controls.Add(new Label { Text = "Your phone as a PC microphone", ForeColor = Color.FromArgb(222, 224, 252), AutoSize = true, Location = new Point(18, 38), Font = new Font("Segoe UI", 8.5F) });
+
+        // add order matters for docking: Fill first, then Bottom, then Top
+        Controls.Add(content);
+        Controls.Add(_status);
+        Controls.Add(header);
+    }
+
+    // ---- card helpers ----
+    private Panel Card(int height)
+    {
+        var p = new Panel { Width = CardW, Height = height, BackColor = CardBg, Margin = new Padding(0, 0, 0, 12) };
+        p.Paint += (_, e) => { using var pen = new Pen(BorderColor); e.Graphics.DrawRectangle(pen, 0, 0, p.Width - 1, p.Height - 1); };
         return p;
+    }
+    private Label Title(string t) => new() { Text = t, ForeColor = Accent, AutoSize = true, Location = new Point(12, 9), Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold) };
+    private Label Lbl(string t, int x, int y, bool sub = false, int w = 0)
+    {
+        var l = new Label { Text = t, ForeColor = sub ? SubInk : Ink, Location = new Point(x, y), BackColor = Color.Transparent };
+        if (w > 0) { l.AutoSize = false; l.Size = new Size(w, 32); } else l.AutoSize = true;
+        return l;
+    }
+
+    private Panel PhoneCard()
+    {
+        var c = Card(214);
+        c.Controls.Add(Title("1  ·  Phone"));
+        _phones.SetBounds(12, 34, CardW - 24, 80); _phones.BorderStyle = BorderStyle.FixedSingle;
+        c.Controls.Add(_phones);
+        _scan.Location = new Point(12, 122); c.Controls.Add(_scan);
+        c.Controls.Add(Lbl("or IP", 124, 127, true));
+        _ip.Location = new Point(162, 124); c.Controls.Add(_ip);
+        c.Controls.Add(Lbl("PIN", 290, 127, true));
+        _pin.Location = new Point(324, 124); c.Controls.Add(_pin);
+        _usb.ForeColor = SubInk; _usb.Location = new Point(12, 160); c.Controls.Add(_usb);
+        return c;
+    }
+
+    private Panel OutputCard()
+    {
+        var c = Card(206);
+        c.Controls.Add(Title("2  ·  Send audio to"));
+        _device.Location = new Point(12, 34); c.Controls.Add(_device);
+        c.Controls.Add(Lbl("Speakers to hear it, or a virtual cable (\"CABLE Input\") to feed Discord/OBS. Switches live.", 12, 62, true, CardW - 24));
+        c.Controls.Add(Lbl("Volume", 12, 112)); _volume.Location = new Point(96, 108); c.Controls.Add(_volume);
+        _volumeLbl.ForeColor = SubInk; _volumeLbl.Location = new Point(352, 112); c.Controls.Add(_volumeLbl);
+        c.Controls.Add(Lbl("Noise cut", 12, 158)); _noise.Location = new Point(96, 154); c.Controls.Add(_noise);
+        _noiseLbl.ForeColor = SubInk; _noiseLbl.Location = new Point(352, 158); c.Controls.Add(_noiseLbl);
+        return c;
+    }
+
+    private Panel VoiceCard()
+    {
+        var c = Card(118);
+        c.Controls.Add(Title("3  ·  Noise engine & voice"));
+        c.Controls.Add(Lbl("Engine", 12, 38, true)); _noiseEngine.Location = new Point(84, 34); c.Controls.Add(_noiseEngine);
+        c.Controls.Add(Lbl("Voice", 12, 78, true));
+        _search.Location = new Point(84, 74); _search.PlaceholderText = "search…"; c.Controls.Add(_search);
+        _effect.Location = new Point(84 + _search.Width + 8, 74); c.Controls.Add(_effect);
+        return c;
+    }
+
+    private Panel ButtonsCard()
+    {
+        var c = new Panel { Width = CardW, Height = 52, BackColor = BgColor };
+        StyleButton(_start, GreenColor); _start.Location = new Point(0, 8); c.Controls.Add(_start);
+        StyleButton(_stop, RedColor); _stop.Location = new Point(142, 8); c.Controls.Add(_stop);
+        _update.Location = new Point(284, 18); c.Controls.Add(_update);
+        return c;
     }
 
     private void StyleButton(Button b, Color color)
     {
-        b.FlatStyle = FlatStyle.Flat;
-        b.FlatAppearance.BorderSize = 0;
-        b.BackColor = color;
-        b.ForeColor = Color.White;
-        b.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-        b.Cursor = Cursors.Hand;
+        b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 0;
+        b.BackColor = color; b.ForeColor = Color.White;
+        b.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold); b.Cursor = Cursors.Hand;
     }
 
-    private void StyleInput(Control c)
-    {
-        c.BackColor = Color.FromArgb(54, 57, 63);
-        c.ForeColor = TextColor;
-        if (c is ComboBox cb) cb.FlatStyle = FlatStyle.Flat;
-        if (c is TextBox tb) tb.BorderStyle = BorderStyle.FixedSingle;
-        if (c is TrackBar tr) tr.BackColor = CardColor;
-    }
-
-    private void BuildUi()
-    {
-        // header band
-        var head = new Panel { Left = 0, Top = 0, Width = ClientSize.Width, Height = 60, BackColor = Accent };
-        head.Controls.Add(new Label { Text = "OpenMic", ForeColor = Color.White, AutoSize = true, Location = new Point(16, 10), Font = new Font("Segoe UI", 16F, FontStyle.Bold) });
-        head.Controls.Add(new Label { Text = "Your phone as a PC microphone", ForeColor = Color.FromArgb(220, 223, 255), AutoSize = true, Location = new Point(18, 38), Font = new Font("Segoe UI", 8.5F) });
-        Controls.Add(head);
-
-        int x = 16, w = 438, y = 72;
-
-        // 1. Phone
-        var c1 = Card(x, y, w, 196);
-        c1.Controls.Add(Hdr("1  Phone", 12, 10));
-        _phones.SetBounds(12, 32, w - 24, 76);
-        StyleInput(_phones); _phones.BorderStyle = BorderStyle.None;
-        c1.Controls.Add(_phones);
-        StyleButton(_scan, Accent); _scan.Location = new Point(12, 116); c1.Controls.Add(_scan);
-        var ipl = Lbl("IP"); ipl.Location = new Point(134, 122); c1.Controls.Add(ipl);
-        StyleInput(_ip); _ip.Location = new Point(158, 119); c1.Controls.Add(_ip);
-        var pl = Lbl("PIN"); pl.Location = new Point(288, 122); c1.Controls.Add(pl);
-        StyleInput(_pin); _pin.Location = new Point(322, 119); c1.Controls.Add(_pin);
-        _usb.ForeColor = SubText; _usb.Location = new Point(12, 158); c1.Controls.Add(_usb);
-        y += 208;
-
-        // 2. Output + sliders
-        var c2 = Card(x, y, w, 188);
-        c2.Controls.Add(Hdr("2  Send audio to", 12, 10));
-        StyleInput(_device); _device.Location = new Point(12, 32); c2.Controls.Add(_device);
-        c2.Controls.Add(Sub("Speakers to hear it, or a virtual cable (\"CABLE Input\") to feed Discord/OBS. Switches live.", 12, 60, w - 24));
-        c2.Controls.Add(Lbl2("Volume", 12, 100));
-        StyleInput(_volume); _volume.Location = new Point(96, 96); c2.Controls.Add(_volume);
-        _volumeLbl.ForeColor = SubText; _volumeLbl.Location = new Point(352, 100); c2.Controls.Add(_volumeLbl);
-        c2.Controls.Add(Lbl2("Noise cut", 12, 142));
-        StyleInput(_noise); _noise.Location = new Point(96, 138); c2.Controls.Add(_noise);
-        _noiseLbl.ForeColor = SubText; _noiseLbl.Location = new Point(352, 142); c2.Controls.Add(_noiseLbl);
-        y += 200;
-
-        // 3. Noise engine + voice changer
-        var c3 = Card(x, y, w, 120);
-        c3.Controls.Add(Hdr("3  Noise suppression & voice", 12, 10));
-        c3.Controls.Add(Lbl2("Engine", 12, 36));
-        StyleInput(_noiseEngine); _noiseEngine.Location = new Point(96, 32); c3.Controls.Add(_noiseEngine);
-        c3.Controls.Add(Lbl2("Voice", 12, 76));
-        StyleInput(_search); _search.Location = new Point(96, 72); _search.PlaceholderText = "search…"; c3.Controls.Add(_search);
-        StyleInput(_effect); _effect.Location = new Point(224, 72); c3.Controls.Add(_effect);
-        y += 132;
-
-        // controls
-        StyleButton(_start, Green); _start.Location = new Point(16, y); Controls.Add(_start);
-        StyleButton(_stop, Red); _stop.Location = new Point(138, y); Controls.Add(_stop);
-        _update.Location = new Point(262, y + 8); Controls.Add(_update);
-
-        _status.BackColor = Color.FromArgb(24, 25, 28);
-        _status.ForeColor = SubText;
-        Controls.Add(_status);
-    }
-
-    private Label Hdr(string t, int lx, int ly) { var l = Header(t); l.Location = new Point(lx, ly); return l; }
-    private Label Sub(string t, int lx, int ly, int wd) { var l = Lbl(t, true); l.AutoSize = false; l.SetBounds(lx, ly, wd, 32); return l; }
-    private Label Lbl2(string t, int lx, int ly) { var l = Lbl(t); l.Location = new Point(lx, ly); return l; }
-
-    private string? Pin() => string.IsNullOrWhiteSpace(_pin.Text) ? null : _pin.Text.Trim();
     private string Effect() => _effect.SelectedItem?.ToString() ?? "None";
+    private string? Pin() => string.IsNullOrWhiteSpace(_pin.Text) ? null : _pin.Text.Trim();
 
     private void FilterEffects()
     {
@@ -198,11 +198,10 @@ public sealed class MainForm : Form
             var phones = Discovery.Discover();
             BeginInvoke(() =>
             {
-                _found = phones;
-                _phones.Items.Clear();
+                _found = phones; _phones.Items.Clear();
                 foreach (var p in phones) _phones.Items.Add(p.ToString());
                 if (phones.Count > 0) { _phones.SelectedIndex = 0; SetStatus($"Found {phones.Count} phone(s). Pick one and press Start."); }
-                else SetStatus("No phones found. Open OpenMic on the phone, press Start there, then Scan again — or type the IP.");
+                else SetStatus("No phones found. Open OpenMic on the phone, press Start, then Scan again — or type the IP.");
                 _scan.Enabled = true; _scan.Text = "Scan Wi-Fi";
             });
         });
@@ -248,11 +247,7 @@ public sealed class MainForm : Form
     private async Task CheckForUpdate()
     {
         string? version = await _updater.CheckAndPrepareAsync();
-        if (version != null)
-        {
-            _update.Text = $"Update to {version} ready — click to restart";
-            _update.Visible = true;
-        }
+        if (version != null) { _update.Text = $"Update to {version} ready — click to restart"; _update.Visible = true; }
     }
 
     private void SetStatus(string s) => _status.Text = s;
@@ -261,32 +256,24 @@ public sealed class MainForm : Form
     private void SetupTray()
     {
         _tray.Icon = System.Drawing.SystemIcons.Application;
-        _tray.Text = "OpenMic";
-        _tray.Visible = true;
+        _tray.Text = "OpenMic"; _tray.Visible = true;
         var menu = new ContextMenuStrip();
         menu.Items.Add("Open OpenMic", null, (_, _) => ShowFromTray());
         menu.Items.Add("Quit", null, (_, _) => ExitApp());
         _tray.ContextMenuStrip = menu;
         _tray.DoubleClick += (_, _) => ShowFromTray();
     }
-
     private void ShowFromTray() { Show(); WindowState = FormWindowState.Normal; ShowInTaskbar = true; Activate(); }
     private void ExitApp() { _reallyExit = true; Close(); }
-
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
         if (!_reallyExit && e.CloseReason == CloseReason.UserClosing)
         {
-            e.Cancel = true;
-            Hide();
-            ShowInTaskbar = false;
+            e.Cancel = true; Hide(); ShowInTaskbar = false;
             _tray.ShowBalloonTip(2000, "OpenMic", "Still running in the tray. Right-click to quit.", ToolTipIcon.Info);
             return;
         }
-        _rx?.Stop();
-        SaveSettings();
-        _tray.Visible = false;
-        _tray.Dispose();
+        _rx?.Stop(); SaveSettings(); _tray.Visible = false; _tray.Dispose();
     }
 
     // ---- settings ----
@@ -317,18 +304,13 @@ public sealed class MainForm : Form
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            var obj = new Dictionary<string, object?>
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(new Dictionary<string, object?>
             {
-                ["ip"] = _ip.Text.Trim(),
-                ["pin"] = _pin.Text.Trim(),
-                ["usb"] = _usb.Checked,
-                ["device"] = _device.SelectedItem?.ToString(),
-                ["effect"] = Effect(),
+                ["ip"] = _ip.Text.Trim(), ["pin"] = _pin.Text.Trim(), ["usb"] = _usb.Checked,
+                ["device"] = _device.SelectedItem?.ToString(), ["effect"] = Effect(),
                 ["engine"] = _noiseEngine.SelectedItem?.ToString(),
-                ["volume"] = _volume.Value / 100.0,
-                ["noise"] = _noise.Value / 100.0,
-            };
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(obj));
+                ["volume"] = _volume.Value / 100.0, ["noise"] = _noise.Value / 100.0,
+            }));
         }
         catch { }
     }
