@@ -28,7 +28,9 @@ protocol (`PROTOCOL.md`).
 | `PROTOCOL.md` | OpenMic's own wire protocol spec | done, v1 |
 | `desktop/openmic_proto.py` | Shared framing | done |
 | `desktop/openmic_discovery.py` | LAN discovery (UDP beacon, no deps) | **working** |
-| `desktop/openmic_server.py` | Desktop receiver (speaker / wav / virtual-mic sinks; `--discover`, `--pin`) | **working** |
+| `desktop/openmic_client.py` | Shared receive core (connect/decode/sink, PIN) | **working** |
+| `desktop/openmic_gui.py` | Desktop app window (scan, pick output, Start/Stop) | **working** |
+| `desktop/openmic_server.py` | Command-line receiver (`--discover`, `--pin`, sinks) | **working** |
 | `desktop/phone_sim.py` | Phone simulator for testing without a phone | **working** |
 | `android/` | The real phone app (Kotlin, PCM16, Wi-Fi/USB, PIN, discovery beacon) | source complete, build locally |
 
@@ -51,15 +53,20 @@ python3 openmic_server.py 127.0.0.1 --sink wav --out test.wav
 1. **Build the phone app** (`android/`) in Android Studio and install it.
 2. Open OpenMic on the phone (same Wi-Fi as the PC), optionally type a **PIN**,
    tap **Start**.
-3. On the PC — no IP typing needed, the PC finds the phone:
+3. On the PC, run the **desktop app** (a window, no command line):
    ```bash
-   pip install sounddevice numpy          # for live playback
+   pip install sounddevice numpy          # for live playback (skip for WAV)
+   python3 desktop/openmic_gui.py
+   ```
+   Press **Scan Wi-Fi**, pick your phone, choose where the audio goes, press
+   **Start**. (On Linux the GUI needs Tk: `sudo apt install python3-tk`.)
+
+   Prefer a command line? Same thing without a window:
+   ```bash
    python3 desktop/openmic_server.py --discover --sink speaker
    # if you set a PIN on the phone, add:  --pin 1234
+   # no broadcast on your network? type the IP: openmic_server.py <phone-ip>
    ```
-   You should hear your voice. Use `--sink wav` first if you have no audio out.
-   Prefer to type the address? `python3 desktop/openmic_server.py <phone-ip>`
-   still works.
 
 ### Making it a real microphone other apps can use
 `--sink speaker` just plays the audio. To make OpenMic show up as a
@@ -110,12 +117,15 @@ Done:
 - [x] **PIN/token auth** so only your PC can connect (tested both sides).
 - [x] **Auto-discovery** so the PC finds the phone — no typing IPs
       (UDP beacon, dependency-free, tested both sides).
+- [x] **Desktop GUI** (`openmic_gui.py`): scan, pick output device, Start/Stop,
+      remembers your settings — no command line needed.
 
 Next:
-- [ ] **Desktop tray app / GUI** with a found-phones list and auto-reconnect
-      (so there's no command line at all).
-- [ ] **Opus codec** (`codec=1`): far less bandwidth, lower latency. Encode on
-      the phone via libopus/NDK; the receiver already has the decode hook.
+- [ ] **Opus codec** (`codec=1`): far less *data* over the network and lower
+      latency (the voice codec Discord/Zoom use — nothing to do with the AI
+      model of the same name). Encode on the phone via libopus/NDK; the desktop
+      receiver already has the decode hook.
+- [ ] **Auto-reconnect** + system-tray icon for the desktop app.
 - [ ] **UDP audio** for lower latency (control stays on TCP).
 - [ ] **Bluetooth** transport (RFCOMM).
 - [ ] **Level meter / mute / gain** in the phone UI (gain hook already in `MicServer`).

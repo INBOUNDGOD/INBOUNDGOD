@@ -434,13 +434,22 @@ without writing a kernel driver, pipe the received audio into a virtual audio
 cable — VB-CABLE (Windows), BlackHole (macOS), null-sink (PipeWire/Pulse). Own
 driver is a big later project.
 
-**Status:** two increments delivered and pushed. v1 pipeline + PIN auth + LAN
-auto-discovery all built and verified on the desktop side; Android app source
-updated to match (PIN field + discovery beacon). **Next (suggested to user):**
-a desktop tray GUI with a found-phones list so there's no command line at all;
-then Opus, UDP audio, Bluetooth. Roadmap in `openmic/README.md`.
-User still needs to build the APK locally (Android Studio) and test a real
-phone→PC stream.
+**Status:** three increments delivered and pushed. v1 pipeline + PIN auth + LAN
+auto-discovery + a **desktop GUI** all built and verified (desktop side). The
+receive core was refactored into `openmic_client.py` (shared by the CLI and the
+GUI; regression-tested). Android app source matches (PIN + discovery beacon).
+**Next (suggested to user):** Opus codec (less bandwidth/latency; user was
+confused Opus-codec vs Opus-the-model — clarified), then auto-reconnect/tray,
+UDP audio, Bluetooth. Roadmap in `openmic/README.md`. User still needs to build
+the APK locally (Android Studio) and test a real phone→PC stream.
+
+**Desktop files now:** `openmic_proto.py` (framing), `openmic_discovery.py`
+(UDP beacon), `openmic_client.py` (shared `Receiver` class + sink/decoder/device
+helpers), `openmic_gui.py` (Tkinter window: Scan Wi-Fi, pick output, Start/Stop,
+remembers settings in `~/.openmic_gui.json`), `openmic_server.py` (CLI wrapper),
+`phone_sim.py` (test phone). GUI needs Python+Tk (Linux: `apt install
+python3-tk`); couldn't be launched in the cloud container (no Tk/display), only
+syntax-checked — user tests the window locally.
 
 ---
 
@@ -510,6 +519,12 @@ phone→PC stream.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic: built the desktop GUI (`openmic_gui.py`, Tkinter) —
+  scan for phones, pick output (speaker/virtual device/WAV), Start/Stop, saves
+  settings. Refactored the receive loop into a shared `openmic_client.Receiver`
+  used by both the GUI and the CLI; regression-tested the CLI after the ref;
+  GUI syntax-checked only (no Tk in the cloud container). Docs + README updated.
 
 - **2026-10-18**: OpenMic: user confirmed standalone-original direction. Added
   PIN auth (token in START, phone rejects on mismatch) and dependency-free LAN
