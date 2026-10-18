@@ -17,6 +17,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 import openmic_discovery
+import openmic_fx
 import openmic_proto as p
 from openmic_client import Receiver, list_output_devices
 
@@ -94,6 +95,19 @@ class App:
                   'pick "CABLE Input" here.', foreground="#666",
                   wraplength=380).pack(anchor="w", pady=(4, 0))
 
+        # --- voice changer ---
+        box3 = ttk.LabelFrame(frm, text="3. Voice changer", padding=8)
+        box3.pack(fill="x", pady=4)
+        self.effect_var = tk.StringVar(value=self.cfg.get("effect", "None"))
+        self.effect_combo = ttk.Combobox(box3, textvariable=self.effect_var,
+                                          values=openmic_fx.PRESETS, width=16,
+                                          state="readonly")
+        self.effect_combo.pack(side="left")
+        self.effect_combo.bind("<<ComboboxSelected>>", self.on_effect_change)
+        note = ("numpy needed: pip install numpy" if not openmic_fx.HAVE_NUMPY
+                else "Change it live while streaming.")
+        ttk.Label(box3, text="  " + note, foreground="#666").pack(side="left")
+
         # --- controls ---
         ctl = ttk.Frame(frm); ctl.pack(fill="x", pady=8)
         self.start_btn = ttk.Button(ctl, text="Start", command=self.start)
@@ -170,7 +184,7 @@ class App:
         self.rx = Receiver(
             host, port, pin=self.pin_var.get().strip() or None,
             sink=self.sink_var.get(), device=self.device_var.get() or None,
-            out_path=self.wav_var.get(),
+            out_path=self.wav_var.get(), effect=self.effect_var.get(),
             on_status=lambda s: self.events.put(("status", s)),
             on_stats=lambda f, l, s: self.events.put(("stats", (f, l, s))),
             on_stopped=lambda r, e: self.events.put(("stopped", (r, e))))
@@ -181,6 +195,12 @@ class App:
     def stop(self):
         if self.rx:
             self.rx.stop()
+
+    def on_effect_change(self, _event=None):
+        """Apply the voice-changer preset live if a session is running."""
+        if self.rx:
+            self.rx.set_effect(self.effect_var.get())
+        self._save()
 
     # ---- marshal worker events onto the Tk thread ----
     def _drain_events(self):
@@ -208,7 +228,7 @@ class App:
         save_config({
             "ip": self.ip_var.get().strip(), "pin": self.pin_var.get().strip(),
             "sink": self.sink_var.get(), "device": self.device_var.get(),
-            "wav": self.wav_var.get()})
+            "wav": self.wav_var.get(), "effect": self.effect_var.get()})
 
     def on_close(self):
         if self.rx:

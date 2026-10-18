@@ -29,7 +29,8 @@ protocol (`PROTOCOL.md`).
 | `desktop/openmic_proto.py` | Shared framing | done |
 | `desktop/openmic_discovery.py` | LAN discovery (UDP beacon, no deps) | **working** |
 | `desktop/openmic_client.py` | Shared receive core (connect/decode/sink, PIN) | **working** |
-| `desktop/openmic_gui.py` | Desktop app window (scan, pick output, Start/Stop) | **working** |
+| `desktop/openmic_fx.py` | Voice-changer effects (numpy): pitch, robot, echo… | **working** |
+| `desktop/openmic_gui.py` | Desktop app window (scan, pick output, voice changer, Start/Stop) | **working** |
 | `desktop/openmic_server.py` | Command-line receiver (`--discover`, `--pin`, sinks) | **working** |
 | `desktop/phone_sim.py` | Phone simulator for testing without a phone | **working** |
 | `android/` | The real phone app (Kotlin, PCM16, Wi-Fi/USB, PIN, discovery beacon) | source complete, build locally |
@@ -65,8 +66,19 @@ python3 openmic_server.py 127.0.0.1 --sink wav --out test.wav
    ```bash
    python3 desktop/openmic_server.py --discover --sink speaker
    # if you set a PIN on the phone, add:  --pin 1234
+   # a voice changer:               add:  --effect "Chipmunk"
    # no broadcast on your network? type the IP: openmic_server.py <phone-ip>
    ```
+
+### Voice changer
+Pick a preset in the GUI's **Voice changer** box (change it live while
+streaming), or pass `--effect "<name>"` on the command line. Presets:
+`Chipmunk`, `Deep voice`, `Robot`, `Alien`, `Echo`, `Megaphone`, `Monster`.
+The effects run on the PC (pure **numpy**, BSD-licensed — no GPL baggage), so
+whatever you pick is what other apps hear through the virtual mic. Needs
+`pip install numpy` (already required for live playback). Add your own in
+`desktop/openmic_fx.py` — each effect is a tiny numpy class, and presets are one
+line in `build_effect()`.
 
 ### Making it a real microphone other apps can use
 `--sink speaker` just plays the audio. To make OpenMic show up as a
@@ -119,6 +131,8 @@ Done:
       (UDP beacon, dependency-free, tested both sides).
 - [x] **Desktop GUI** (`openmic_gui.py`): scan, pick output device, Start/Stop,
       remembers your settings — no command line needed.
+- [x] **Voice changer** (`openmic_fx.py`): pitch/robot/echo/etc. presets,
+      changeable live, numpy-only (tested: pitch shift verified by FFT).
 
 Next:
 - [ ] **Opus codec** (`codec=1`): far less *data* over the network and lower

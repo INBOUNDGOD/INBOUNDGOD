@@ -445,11 +445,23 @@ the APK locally (Android Studio) and test a real phone→PC stream.
 
 **Desktop files now:** `openmic_proto.py` (framing), `openmic_discovery.py`
 (UDP beacon), `openmic_client.py` (shared `Receiver` class + sink/decoder/device
-helpers), `openmic_gui.py` (Tkinter window: Scan Wi-Fi, pick output, Start/Stop,
-remembers settings in `~/.openmic_gui.json`), `openmic_server.py` (CLI wrapper),
-`phone_sim.py` (test phone). GUI needs Python+Tk (Linux: `apt install
-python3-tk`); couldn't be launched in the cloud container (no Tk/display), only
-syntax-checked — user tests the window locally.
+helpers + voice-fx hook + live `set_effect`), `openmic_fx.py` (voice changer,
+numpy only), `openmic_gui.py` (Tkinter window: Scan Wi-Fi, pick output, voice
+changer, Start/Stop, remembers settings in `~/.openmic_gui.json`),
+`openmic_server.py` (CLI wrapper, `--effect`), `phone_sim.py` (test phone). GUI
+needs Python+Tk (Linux: `apt install python3-tk`); couldn't be launched in the
+cloud container (no Tk/display), only syntax-checked — user tests the window
+locally.
+
+**Voice changer (`openmic_fx.py`, 2026-10-18):** runs on the DESKTOP (after
+decode, before the sink) so the virtual mic carries the changed voice; chosen
+over phone-side so no APK rebuild and live tweaking. Pure numpy (BSD — no GPL,
+unlike Spotify's pedalboard which was considered and noted as GPL-3.0). Effects:
+`PitchShift` (two-tap modulated delay line, tempo-preserving, verified by FFT:
+200Hz→400Hz at +12 st, →100Hz at −12 st, and 220Hz→~320Hz end-to-end at +7),
+`RingMod` (robot), `Echo`, `Drive`, `Gain`, `Chain`. Presets: None, Chipmunk,
+Deep voice, Robot, Alien, Echo, Megaphone, Monster. User asked for it 2026-10-18
+and separately clarified they confused Opus-the-codec with Opus-the-model.
 
 ---
 
@@ -519,6 +531,13 @@ syntax-checked — user tests the window locally.
 
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-18**: OpenMic: added a voice changer (`openmic_fx.py`, numpy):
+  real-time pitch shift (tempo-preserving delay-line, FFT-verified), ring-mod
+  robot, echo, drive, and presets (Chipmunk/Deep/Robot/Alien/Echo/Megaphone/
+  Monster). Runs on the desktop between decode and sink; wired into the shared
+  Receiver (live `set_effect`), the CLI (`--effect`), and the GUI (preset
+  dropdown, changeable while streaming). Verified end-to-end.
 
 - **2026-10-18**: OpenMic: built the desktop GUI (`openmic_gui.py`, Tkinter) —
   scan for phones, pick output (speaker/virtual device/WAV), Start/Stop, saves

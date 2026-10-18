@@ -11,6 +11,7 @@ import threading
 import time
 import wave
 
+import openmic_fx as fx
 import openmic_proto as p
 
 
@@ -86,7 +87,7 @@ class Receiver:
 
     def __init__(self, host, port=p.DEFAULT_PORT, pin=None, sink="speaker",
                  device=None, out_path="openmic_capture.wav", rate=None,
-                 on_status=None, on_stats=None, on_stopped=None):
+                 effect=None, on_status=None, on_stats=None, on_stopped=None):
         self.host = host
         self.port = port
         self.pin = pin or None
@@ -94,6 +95,9 @@ class Receiver:
         self.device = device
         self.out_path = out_path
         self.rate = rate
+        self.effect_name = effect       # voice-changer preset name, or None
+        self._effect = None             # built once we know the sample rate
+        self._sample_rate = None
         self.on_status = on_status or (lambda s: None)
         self.on_stats = on_stats or (lambda f, l, s: None)
         self.on_stopped = on_stopped or (lambda reason, error: None)
@@ -105,6 +109,12 @@ class Receiver:
         self._thread = threading.Thread(target=self._run, name="openmic-rx",
                                         daemon=True)
         self._thread.start()
+
+    def set_effect(self, name):
+        """Change the voice-changer preset live (safe to call while running)."""
+        self.effect_name = name
+        if self._sample_rate:
+            self._effect = fx.build_effect(name, self._sample_rate)
 
     def stop(self):
         self._stop.set()
@@ -157,6 +167,8 @@ class Receiver:
             sink, close_sink = make_sink(self.sink_kind, sample_rate, channels,
                                          self.out_path, self.device)
             decode = make_decoder(codec, sample_rate, channels)
+            self._sample_rate = sample_rate
+            self._effect = fx.build_effect(self.effect_name, sample_rate)
             self.on_status(f"Streaming {sample_rate} Hz, {channels} ch "
                            f"from {hello.get('device', 'phone')}")
 
@@ -174,7 +186,7 @@ class Receiver:
                     if last_seq >= 0 and seq != last_seq + 1:
                         lost += seq - last_seq - 1
                     last_seq = seq
-                    sink(decode(enc))
+                    sink(fx.process_pcm16(self._effect, decode(enc)))
                     frames += 1
                     if frames % 25 == 0:
                         self.on_stats(frames, lost, time.time() - t0)

@@ -63,8 +63,8 @@ def run(args):
         done.set()
 
     rx = Receiver(host, port, pin=args.pin, sink=args.sink, device=args.device,
-                  out_path=args.out, rate=args.rate, on_status=on_status,
-                  on_stats=on_stats, on_stopped=on_stopped)
+                  out_path=args.out, rate=args.rate, effect=args.effect,
+                  on_status=on_status, on_stats=on_stats, on_stopped=on_stopped)
     rx.start()
     try:
         while not done.is_set():
@@ -90,6 +90,9 @@ def main():
     ap.add_argument("--device", default=None,
                     help='output device name for --sink virtual (e.g. "CABLE Input")')
     ap.add_argument("--rate", type=int, default=None, help="override sample rate")
+    ap.add_argument("--effect", default=None,
+                    help="voice-changer preset: Chipmunk, Deep voice, Robot, "
+                         "Alien, Echo, Megaphone, Monster")
     run(ap.parse_args())
 
 
