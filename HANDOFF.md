@@ -4,7 +4,7 @@ The single source of truth for picking up this project mid-stream. Any Claude
 session (any model) that opens this repo should read this file first, then
 keep it current. See `CLAUDE.md` for the update rules.
 
-_Last updated: 2026-10-12_
+_Last updated: 2026-10-22_
 
 ---
 
@@ -440,8 +440,30 @@ or map, the annual re-survey workflow, or something else).
 
 ---
 
+## 4b. Pointer: the user's PC crash (Blue Screen, 2026-10-15)
+
+Not part of this repo's projects, recorded because the user asked. Cloud
+session "Blue screen of death error" (`session_014xb4XzERoAxJV3w43j2Kro`,
+2026-10-15) handled a PC that stopped booting with `0xc0000221` (corrupt
+system file) and `0xc0000098` (broken BCD); the cause found was an **NVMe
+drive disconnecting under load**, corrupting files mid-write. It wrote a
+Windows recovery kit in the **private** repo `INBOUNDGOD/claude-phone-`,
+branch `ccr-1fe3c1cb-ebqajc` (not merged to `main`): `windows-recovery/
+RESCUE.cmd` (boot-USB repair menu, Shift+F10 from Windows Setup; nothing
+formats), `drive-health.ps1` (drive health and event-log checker with an
+optional daily scheduled task) and a README. Related same-day session:
+"Claude CLI auto-start memory issue" (stopped idle Code sessions, freed RAM).
+Earlier, 2026-10-02's "HANDOFF bundle analysis" session noted the RTX 3060 Ti
+driver won't initialise (see 1c), not a crash.
+
+---
+
 ## 5. Change log
 Newest first. One line per meaningful change: date, what changed, where.
+
+- **2026-10-22**: User asked whether any session covered their computer
+  crashing. Found the 2026-10-15 Blue Screen session and its recovery kit in
+  the private repo; added pointer section 4b.
 
 - **2026-10-12**: Hessequa: checked the Slangrivier footprint and dates at
   the user's request; added Slangrivier-specific Draft-B points to the notes
